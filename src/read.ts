@@ -1,10 +1,10 @@
-import AWS from 'aws-sdk';
+import AWS from 'aws-sdk/clients/dynamodb';
 
-import config from './config';
+import config from '../config';
 
 config();
 
-const docClient = new AWS.DynamoDB.DocumentClient();
+const docClient = new AWS.DocumentClient();
 const fetchOneByKey = () => {
   const params = {
     TableName: 'users',

@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk';
 
-import config from './config';
+import config from '../config';
 
 config();
 
@@ -26,6 +26,7 @@ const modify = () => {
       ':byUser': 'andreUser',
       ':boolValue': true,
     }, */
+    ReturnValues: 'UPDATED_NEW',
   };
 
   docClient.update(params, (err, data) => {
