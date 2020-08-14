@@ -1,6 +1,6 @@
 import express from 'express';
 import Read from './read';
-import config from '../config';
+import config from './config';
 
 config();
 
