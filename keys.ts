@@ -1,0 +1,2 @@
+global.acessKeyId = '';
+global.secretAcessKey = '';
