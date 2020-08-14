@@ -33,4 +33,27 @@ export default class UsersController {
       return res.status(400).json({ error: 'Unexpected error while creating new class' });
     }
   }
+
+  async find(req:Request, res:Response) {
+    const { email } = req.body;
+    const params = {
+      TableName: 'users',
+      Key: {
+        email_id: email,
+      },
+    };
+    try {
+      this.docClient.get(params, (err, data) => {
+        if (err) {
+          console.log(`erro no find 1 - ${err.message}`);
+          res.json({ error: err.message });
+        }
+        return res.json({ data });
+      });
+      return res.status(200);
+    } catch (error) {
+      console.log(`erro no find 2 - ${error.message}`);
+      return res.status(404).json({ error: error.message });
+    }
+  }
 }

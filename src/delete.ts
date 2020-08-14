@@ -6,7 +6,7 @@ config();
 
 const docClient = new AWS.DynamoDB.DocumentClient();
 
-const modify = () => {
+const deleteUser = () => {
   const params = {
     TableName: 'users',
     Key: { email_id: 'example-1@gmail.com' },
@@ -18,4 +18,4 @@ const modify = () => {
   });
 };
 
-modify();
+export default deleteUser;
