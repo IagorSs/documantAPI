@@ -1,13 +1,13 @@
 import AWS from 'aws-sdk';
-import readKeys from './keys';
+import keys from '../keys.json';
 
 export default function index() {
-  const globalKeys = readKeys();
+  console.log(keys);
   const awsConfig = {
     region: 'us-east-2',
     endpoint: 'http://dynamodb.us-east-2.amazonaws.com',
-    acessKeyId: globalKeys.acessKeyId,
-    secretAcessKey: globalKeys.secretAcessKey,
+    acessKeyId: keys.acessKeyId,
+    secretAcessKey: keys.secretAcessKey,
   };
 
   AWS.config.update(awsConfig);
