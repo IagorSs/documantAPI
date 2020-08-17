@@ -2,11 +2,11 @@
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
-import config from '../config';
+import Config from '../config';
 
 class UsersController {
   static async getClient() {
-    config();
+    Config.configDynamo();
     return new AWS.DocumentClient();
   }
 

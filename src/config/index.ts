@@ -1,13 +1,28 @@
 import AWS from 'aws-sdk';
 import keys from '../keys.json';
 
-export default function index() {
-  const awsConfig = {
-    region: 'us-east-2',
-    endpoint: 'http://dynamodb.us-east-2.amazonaws.com',
-    acessKeyId: keys.acessKeyId,
-    secretAcessKey: keys.secretAcessKey,
-  };
+class Config {
+  static configDynamo() {
+    const awsConfig = {
+      region: 'us-east-2',
+      acessKeyId: keys.acessKeyId,
+      secretAcessKey: keys.secretAcessKey,
+      endpoint: 'http://dynamodb.us-east-2.amazonaws.com',
+    };
 
-  AWS.config.update(awsConfig);
+    AWS.config.update(awsConfig);
+  }
+
+  static configS3() {
+    const awsConfig = {
+      region: 'us-east-2',
+      acessKeyId: keys.acessKeyId,
+      secretAcessKey: keys.secretAcessKey,
+      endpoint: 'http://s3.us-east-2.amazonaws.com',
+    };
+
+    AWS.config.update(awsConfig);
+  }
 }
+
+export default Config;
