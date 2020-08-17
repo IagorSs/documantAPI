@@ -23,6 +23,10 @@ class Config {
 
     AWS.config.update(awsConfig);
   }
+
+  static resetConfig() {
+    console.log('Not implementted yet');
+  }
 }
 
 export default Config;

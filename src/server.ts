@@ -12,9 +12,9 @@ routes
   .get('/users', UsersController.find)
   .post('/users', UsersController.create)
   .put('/users', UsersController.update)
-  .delete('/users', UsersController.delete);
-// .get('/find_users', read.fetchOneByKey)
-// .get('/files', filesController.getFile);
+  .delete('/users', UsersController.delete)
+
+  .get('/files', filesController.getFile);
 
 app.listen(8000, () => {
   // eslint-disable-next-line no-console

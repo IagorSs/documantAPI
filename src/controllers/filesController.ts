@@ -4,17 +4,24 @@ import { Request, Response } from 'express';
 import Config from '../config';
 
 export default class filesController {
+  static async getClient() {
+    Config.configS3();
+    return new AWS_S3();
+  }
+
   static async getFile(req:Request, res:Response) {
+    const {
+      Bucket,
+    } = req.body;
     try {
-      Config.configS3();
-      const s3 = new AWS_S3();
+      const s3 = await filesController.getClient();
       const response = await s3.listObjectsV2({
-        Bucket: 'liveteste',
+        Bucket,
       }).promise();
 
-      return res.json(response);
+      return response ? res.status(200).json(response) : res.sendStatus(500);
     } catch (error) {
-      return res.json(error);
+      return res.status(500).json(error);
     }
   }
 }
