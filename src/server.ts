@@ -8,10 +8,10 @@ app.use(express.json());
 app.use(routes);
 
 routes
-  .get('/find_users', UsersController.find)
-  .post('/create_user', UsersController.create)
-  .put('/update_user', UsersController.update)
-  .delete('/delete_user', UsersController.delete);
+  .get('/users', UsersController.find)
+  .post('/users', UsersController.create)
+  .put('/users', UsersController.update)
+  .delete('/users', UsersController.delete);
 
 app.listen(8000, () => {
   // eslint-disable-next-line no-console

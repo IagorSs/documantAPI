@@ -4,10 +4,11 @@ import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import config from '../config';
 
-config();
-
 class UsersController {
-  static docClient = new AWS.DocumentClient();
+  static async getClient() {
+    config();
+    return new AWS.DocumentClient();
+  }
 
   static async create(req:Request, res:Response) {
     const {
@@ -27,37 +28,42 @@ class UsersController {
     };
 
     try {
-      UsersController.docClient.put(params, (err) => {
+      const docClient = await UsersController.getClient();
+
+      return docClient.put(params, (err, data) => {
         if (err) {
           console.log(`erro - ${JSON.stringify(err, null, 2)}`);
+          return res.status(500).json({ error: err.message });
         }
+        return res.status(200).json(data);
       });
-      return res.status(200);
     } catch (err) {
-      return res.status(400).json({ error: 'Unexpected error while creating new class' });
+      return res.status(500).json({ error: err.message });
     }
   }
 
   static async find(req:Request, res:Response) {
     const { email } = req.body;
+
     const params = {
       TableName: 'users',
       Key: {
         email_id: email,
       },
     };
+
     try {
-      UsersController.docClient.get(params, (err, data) => {
+      const docClient = await UsersController.getClient();
+
+      return docClient.get(params, (err, data) => {
         if (err) {
           console.log(`erro no find 1 - ${err.message}`);
-          return res.json({ error: err.message });
+          return res.status(500).json({ error: err.message });
         }
-        return res.json({ data });
+        return res.status(200).json(data);
       });
-      return res.status(200);
     } catch (error) {
-      console.log(`erro no find 2 - ${error.message}`);
-      return res.status(404).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   }
 
@@ -67,16 +73,22 @@ class UsersController {
       TableName: 'users',
       Key: { email_id: oldEmail },
       AttributeUpdates: {
-        update_by: {
+        newEmail: {
           Action: 'PUT',
           Value: newEmail,
         },
       },
     };
-    UsersController.docClient.update(params, (err, data) => {
-      if (err) return res.json({ error: err.message });
-      return res.status(200).json({ data });
-    });
+    try {
+      const docClient = await UsersController.getClient();
+
+      return docClient.update(params, (err, data) => {
+        if (err) return res.status(500).json({ error: err.message });
+        return res.status(200).json(data);
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
   }
 
   static async delete(req:Request, res:Response) {
@@ -86,10 +98,16 @@ class UsersController {
       Key: { email_id: email },
     };
 
-    UsersController.docClient.delete(params, (err) => {
-      if (err) return res.json({ error: err.message });
-      return res.json({ message: 'user deleted successfully' });
-    });
+    try {
+      const docClient = await UsersController.getClient();
+
+      return docClient.delete(params, (err) => {
+        if (err) return res.send(500).json({ error: err.message });
+        return res.send(200).json({ message: 'user deleted successfully' });
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
   }
 }
 
