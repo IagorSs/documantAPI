@@ -1,11 +1,15 @@
+/* eslint-disable no-console */
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
+import config from '../config';
 
-export default class UsersController {
-  docClient = new AWS.DocumentClient();
+config();
 
-  async create(req:Request, res:Response) {
+class UsersController {
+  static docClient = new AWS.DocumentClient();
+
+  static async create(req:Request, res:Response) {
     const {
       email,
     } = req.body;
@@ -23,7 +27,7 @@ export default class UsersController {
     };
 
     try {
-      this.docClient.put(params, (err) => {
+      UsersController.docClient.put(params, (err) => {
         if (err) {
           console.log(`erro - ${JSON.stringify(err, null, 2)}`);
         }
@@ -34,7 +38,7 @@ export default class UsersController {
     }
   }
 
-  async find(req:Request, res:Response) {
+  static async find(req:Request, res:Response) {
     const { email } = req.body;
     const params = {
       TableName: 'users',
@@ -43,10 +47,10 @@ export default class UsersController {
       },
     };
     try {
-      this.docClient.get(params, (err, data) => {
+      UsersController.docClient.get(params, (err, data) => {
         if (err) {
           console.log(`erro no find 1 - ${err.message}`);
-          res.json({ error: err.message });
+          return res.json({ error: err.message });
         }
         return res.json({ data });
       });
@@ -56,4 +60,37 @@ export default class UsersController {
       return res.status(404).json({ error: error.message });
     }
   }
+
+  static async update(req:Request, res:Response) {
+    const { oldEmail, newEmail } = req.body;
+    const params = {
+      TableName: 'users',
+      Key: { email_id: oldEmail },
+      AttributeUpdates: {
+        update_by: {
+          Action: 'PUT',
+          Value: newEmail,
+        },
+      },
+    };
+    UsersController.docClient.update(params, (err, data) => {
+      if (err) return res.json({ error: err.message });
+      return res.status(200).json({ data });
+    });
+  }
+
+  static async delete(req:Request, res:Response) {
+    const { email } = req.body;
+    const params = {
+      TableName: 'users',
+      Key: { email_id: email },
+    };
+
+    UsersController.docClient.delete(params, (err) => {
+      if (err) return res.json({ error: err.message });
+      return res.json({ message: 'user deleted successfully' });
+    });
+  }
 }
+
+export default UsersController;
