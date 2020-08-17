@@ -6,7 +6,7 @@ import Config from '../config';
 
 class UsersController {
   static async getClient() {
-    Config.configDynamo();
+    // Config.configDynamo();
     return new AWS.DocumentClient();
   }
 

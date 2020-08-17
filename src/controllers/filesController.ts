@@ -5,7 +5,7 @@ import Config from '../config';
 
 export default class filesController {
   static async getClient() {
-    Config.configS3();
+    // Config.configS3();
     return new AWS_S3();
   }
 

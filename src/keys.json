@@ -1,4 +1,9 @@
 {
-  "acessKeyId": "",
-  "secretAcessKey": ""
+  "AWS": {
+    "acessKeyId": "",
+    "secretAcessKey": ""
+  },
+  "convertAPI": {
+    "key": ""
+  }
 }

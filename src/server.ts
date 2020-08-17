@@ -1,9 +1,12 @@
 import express from 'express';
 import UsersController from './controllers/usersController';
 import filesController, {} from './controllers/filesController';
+import Config from './config';
 
 const app = express();
 const routes = express.Router();
+
+Config.index();
 
 app.use(express.json());
 app.use(routes);
