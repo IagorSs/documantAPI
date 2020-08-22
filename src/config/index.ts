@@ -1,21 +1,18 @@
 import AWS from 'aws-sdk';
-import keys from '../keys.json';
 
 class Config {
   static index() {
     this.general();
-    this.configDynamo();
-    this.configS3();
+    AWS.config.dynamodb = { endpoint: 'http://dynamodb.us-east-2.amazonaws.com' };
+    AWS.config.s3 = { endpoint: 'http://s3.us-east-2.amazonaws.com' };
   }
 
   static general() {
-    const awsConfig = {
-      region: 'us-east-2',
-      acessKeyId: keys.AWS.acessKeyId,
-      secretAcessKey: keys.AWS.secretAcessKey,
-    };
-
-    AWS.config.update(awsConfig);
+    // have to config credentials in profile documant
+    // https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html
+    const credentials = new AWS.SharedIniFileCredentials({ profile: 'documant' });
+    AWS.config.credentials = credentials;
+    AWS.config.region = 'us-east-2';
   }
 
   static configDynamo() {

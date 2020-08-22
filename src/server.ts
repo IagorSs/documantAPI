@@ -17,7 +17,9 @@ routes
   .put('/users', UsersController.update)
   .delete('/users', UsersController.delete)
 
-  .get('/files', filesController.getFile);
+  .get('/files', filesController.getFile)
+
+  .get('/exampleTeste', filesController.getExampleFE);
 
 app.listen(8000, () => {
   // eslint-disable-next-line no-console
