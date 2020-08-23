@@ -9,24 +9,34 @@ export default class filesController {
   }
 
   static async getFileStorage(Bucket:string, Key:string) {
-    const s3 = await this.getClient();
+    const s3 = await filesController.getClient();
 
     return s3.getObject({ Bucket, Key });
   }
 
   static async getExampleFE(req:Request, res:Response) {
+    let errorHandling;
     try {
-      const { Bucket, Key, fileLocation } = req.body;
+      const { Bucket, Key /* fileLocation */ } = req.body;
+
+      const fileLocation = './src/temp/';
 
       const fileCompleteLocation = `${fileLocation}${Key}`;
-      const file = FileSystem.createWriteStream(fileCompleteLocation);
-      const storageFile = await this.getFileStorage(Bucket, Key);
 
+      errorHandling = 'Cannot found fileLocation';
+      const file = FileSystem.createWriteStream(fileCompleteLocation);
+
+      errorHandling = 'Cannot get File from storage';
+      const storageFile = await filesController.getFileStorage(Bucket, Key);
+
+      errorHandling = 'Cannot write correctly file';
       storageFile.createReadStream().pipe(file);
 
+      errorHandling = 'Cannot return response';
       return res.sendStatus(200);
     } catch (error) {
-      return res.status(500).json(error);
+      console.log(error);
+      return res.status(500).send(errorHandling);
     }
   }
 
@@ -34,7 +44,7 @@ export default class filesController {
     try {
       const { Bucket, Key } = req.body;
 
-      const storageFile = await this.getFileStorage(Bucket, Key);
+      const storageFile = await filesController.getFileStorage(Bucket, Key);
 
       res.sendStatus(200);
 
