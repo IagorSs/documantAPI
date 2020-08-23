@@ -2,11 +2,9 @@
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
-import Config from '../config';
 
 class UsersController {
   static async getClient() {
-    // Config.configDynamo();
     return new AWS.DocumentClient();
   }
 
@@ -28,7 +26,7 @@ class UsersController {
     };
 
     try {
-      const docClient = await UsersController.getClient();
+      const docClient = await this.getClient();
 
       return docClient.put(params, (err, data) => {
         if (err) {
@@ -53,7 +51,7 @@ class UsersController {
     };
 
     try {
-      const docClient = await UsersController.getClient();
+      const docClient = await this.getClient();
 
       return docClient.get(params, (err, data) => {
         if (err) {
@@ -80,7 +78,7 @@ class UsersController {
       },
     };
     try {
-      const docClient = await UsersController.getClient();
+      const docClient = await this.getClient();
 
       return docClient.update(params, (err, data) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -99,7 +97,7 @@ class UsersController {
     };
 
     try {
-      const docClient = await UsersController.getClient();
+      const docClient = await this.getClient();
 
       return docClient.delete(params, (err) => {
         if (err) return res.send(500).json({ error: err.message });
