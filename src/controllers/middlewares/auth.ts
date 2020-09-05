@@ -1,15 +1,12 @@
-// eslint-disable-next-line no-unused-vars
-import { Request, Response, NextFunction } from 'express';
+/* eslint-disable no-unused-vars */
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+
+import Request from '../../interfaces/Request';
 import authConfig from '../../config/auth';
 
-export interface CustomRequest extends Request{
-  token?: string,
-  user?: object,
-}
-
 // eslint-disable-next-line consistent-return
-function authenticate(req:CustomRequest, res:Response, next:NextFunction) {
+function authenticate(req:Request, res:Response, next:NextFunction) {
   const { token } = req;
   if (!token) {
     return res.status(204).json({ error: 'token can\'t be null' });
