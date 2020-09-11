@@ -20,8 +20,8 @@ class UsersController {
     } = req.body;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const input = {
-      email_id: email,
       user,
+      email_id: email,
       password: hashedPassword,
       created_on: new Date().toString(),
       updated_on: new Date().toString(),

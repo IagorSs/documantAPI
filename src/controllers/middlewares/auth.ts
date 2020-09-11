@@ -9,7 +9,8 @@ import authConfig from '../../config/auth';
 function authenticate(req:Request, res:Response, next:NextFunction) {
   const { token } = req;
   if (!token) {
-    return res.status(204).json({ error: 'token can\'t be null' });
+    // eslint-disable-next-line quotes
+    return res.status(204).json({ error: `token can't be null` });
   }
 
   // eslint-disable-next-line consistent-return
