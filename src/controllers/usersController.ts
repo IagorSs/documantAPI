@@ -2,6 +2,12 @@
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
+import bcrypt from 'bcrypt';
+import config from '../config';
+
+const saltRounds = 10;
+
+config();
 
 class UsersController {
   static async getClient() {
@@ -10,21 +16,23 @@ class UsersController {
 
   static async create(req:Request, res:Response) {
     const {
+      user,
       email,
+      password,
     } = req.body;
-
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
     const input = {
+      user,
       email_id: email,
+      password: hashedPassword,
       created_on: new Date().toString(),
       updated_on: new Date().toString(),
       is_deleted: false,
     };
-
     const params = {
       TableName: 'users',
       Item: input,
     };
-
     try {
       const docClient = await this.getClient();
 
@@ -41,12 +49,11 @@ class UsersController {
   }
 
   static async find(req:Request, res:Response) {
-    const { email } = req.body;
-
+    const { user } = req.body;
     const params = {
       TableName: 'users',
       Key: {
-        email_id: email,
+        user,
       },
     };
 
