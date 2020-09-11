@@ -3,11 +3,8 @@
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
-import config from '../config';
 
 const saltRounds = 10;
-
-config();
 
 class UsersController {
   static async getClient() {
@@ -30,11 +27,11 @@ class UsersController {
       is_deleted: false,
     };
     const params = {
-      TableName: 'users',
+      TableName: 'users_document_db',
       Item: input,
     };
     try {
-      const docClient = await this.getClient();
+      const docClient = await UsersController.getClient();
 
       return docClient.put(params, (err, data) => {
         if (err) {
@@ -51,14 +48,14 @@ class UsersController {
   static async find(req:Request, res:Response) {
     const { user } = req.body;
     const params = {
-      TableName: 'users',
+      TableName: 'users_document_db',
       Key: {
         user,
       },
     };
 
     try {
-      const docClient = await this.getClient();
+      const docClient = await UsersController.getClient();
 
       return docClient.get(params, (err, data) => {
         if (err) {
@@ -73,10 +70,10 @@ class UsersController {
   }
 
   static async update(req:Request, res:Response) {
-    const { oldEmail, newEmail } = req.body;
+    const { user, newEmail } = req.body;
     const params = {
-      TableName: 'users',
-      Key: { email_id: oldEmail },
+      TableName: 'users_document_db',
+      Key: { user },
       AttributeUpdates: {
         newEmail: {
           Action: 'PUT',
@@ -85,7 +82,7 @@ class UsersController {
       },
     };
     try {
-      const docClient = await this.getClient();
+      const docClient = await UsersController.getClient();
 
       return docClient.update(params, (err, data) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -99,7 +96,7 @@ class UsersController {
   static async delete(req:Request, res:Response) {
     const { email } = req.body;
     const params = {
-      TableName: 'users',
+      TableName: 'users_document_db',
       Key: { email_id: email },
     };
 

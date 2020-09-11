@@ -1,0 +1,36 @@
+COISAS A SE RESOLVER:
+	método create recriando objetos da tabela
+	Criar rota de login/logout
+	Separar Get da API do Get front
+	Lógica comparação senha JWT
+
+	Implementar funções tabela template
+
+  Falar com galera do front como implementar download de documentos
+
+
+tabela users_document_db
+	user: id
+	nome
+	email
+	created_on
+	updated_on
+	is_deleted
+	password
+  my_documents_templates: []
+  my_todo_templates: []
+
+tabela documents_document_db
+  document_id
+	título
+	Descrição
+	Usuário criador
+	URL: documento no storage s3
+
+tabela todo_document_db
+  todo_id
+	título
+	Descrição
+	Usuário criador
+  Vetor de documentos: [document_id]
+  Vetor is_done: associado a vetor de documentos

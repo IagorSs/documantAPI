@@ -2,7 +2,7 @@ import AWS from 'aws-sdk';
 
 class Config {
   static index() {
-    this.general();
+    Config.general();
     AWS.config.dynamodb = { endpoint: 'http://dynamodb.us-east-2.amazonaws.com' };
     AWS.config.s3 = { endpoint: 'http://s3.us-east-2.amazonaws.com' };
   }
