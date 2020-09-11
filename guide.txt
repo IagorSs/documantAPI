@@ -14,6 +14,8 @@ COISAS A SE RESOLVER:
 
   Falar com galera do front como implementar download de documentos
 
+  Colocar associado a conta da AWS da Commit (tem como fazer isso sem CNPJ?)
+
 
 tabela users_document_db
 	user: id
@@ -23,8 +25,8 @@ tabela users_document_db
 	updated_on
 	is_deleted
 	password
-  my_documents_templates: []
-  my_todo_templates: []
+	my_documents_templates: []
+	my_todo_templates: []
 
 tabela documents_document_db
   document_id
@@ -38,5 +40,6 @@ tabela todo_document_db
 	título
 	Descrição
 	Usuário criador
-  Vetor de documentos: [document_id]
+  Vetor de documentos: []
+    Copiar aqui os documentos necessários, não gravar só o id
   Vetor is_done: associado a vetor de documentos
