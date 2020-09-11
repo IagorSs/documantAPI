@@ -75,7 +75,7 @@ class UsersController {
       TableName: 'users_document_db',
       Key: { user },
       AttributeUpdates: {
-        newEmail: {
+        email_id: {
           Action: 'PUT',
           Value: newEmail,
         },

@@ -4,7 +4,13 @@ COISAS A SE RESOLVER:
 	Separar Get da API do Get front
 	Lógica comparação senha JWT
 
-	Implementar funções tabela template
+  Usuário da AWS
+    problema em produção: não ta conseguindo settar isso diretamente no código
+    problema de segurança: configurar exatamente permissões do usuário
+  
+  Colocar em produção no EC2
+
+	Implementar tabelas
 
   Falar com galera do front como implementar download de documentos
 
