@@ -53,7 +53,6 @@ class UsersController {
         user,
       },
     };
-
     try {
       const docClient = await UsersController.getClient();
 
