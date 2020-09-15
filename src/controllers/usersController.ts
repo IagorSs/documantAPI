@@ -55,7 +55,6 @@ class UsersController {
     };
     try {
       const docClient = await UsersController.getClient();
-
       return docClient.get(params, (err, data) => {
         if (err) {
           console.log(`erro no find 1 - ${err.message}`);

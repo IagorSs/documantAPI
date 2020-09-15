@@ -2,6 +2,7 @@ import express from 'express';
 import UsersController from './controllers/usersController';
 import filesController, {} from './controllers/filesController';
 import Config from './config';
+import LoginController from './controllers/loginController';
 
 const app = express();
 const routes = express.Router();
@@ -16,6 +17,8 @@ routes
   .post('/users', UsersController.create)
   .put('/users', UsersController.update)
   .delete('/users', UsersController.delete)
+
+  .get('/login', LoginController.login)
 
   .get('/files', filesController.getFile)
 

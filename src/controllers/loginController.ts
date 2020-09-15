@@ -1,8 +1,10 @@
+import jwt from 'jsonwebtoken';
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
-import UsersController from './usersController';
+import User from './ourUserController';
+import auth from '../config/auth';
 
 class Login {
   static async getClient() {
@@ -12,21 +14,28 @@ class Login {
   static async login(req:Request, res:Response) {
     const { username, password } = req.body;
     try {
-      const user = UsersController.find(username);
-      if (user.error) {
+      const user = User.find(username);
+      if (user.message != null) {
         return res.status(404).json({ error: 'user not found' });
       }
       const match = await bcrypt.compare(password, user.password);
       if (!match) {
         return res.status(401).json({ error: 'wrong password' });
       }
+      const userForToken = {
+        username,
+        id: 0, /* algum id q a gente tem q definir pra cada user
+        (caso ache desnecessário, só tirar a chave id do json) */
+      };
+      const accessToken = jwt.sign(userForToken, auth.secret, { expiresIn: auth.expire });
+      return res.json({ accessToken });
     } catch (error) {
-      /* todo */
+      return res.json({ error: error.message });
     }
   }
 
   static async logout(req:Request, res:Response) {
-    /* todo */
+    /* aqui a gente precisa só excluir o refreshToken de onde ele estiver armazenado */
   }
 }
 
