@@ -21,7 +21,7 @@ class User {
           if (Object.keys(data).length === 0) {
             console.log(`erro no find 2 - ${err}`); // err sempre retorna null (mesmo caso não ache usuário)
             resolve({
-              message: 'user not found',
+              message: 'usuário não encontrado',
             });
             return err;
           }

@@ -103,10 +103,10 @@ class UsersController {
 
       return docClient.delete(params, (err) => {
         if (err) return res.send(500).json({ error: err.message });
-        return res.send(200).json({ message: 'user deleted successfully' });
+        return res.send(200).json({ message: 'usuário excluído com sucesso' });
       });
     } catch (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: `não foi possível concluir a solicitação - ${error.message}` });
     }
   }
 }

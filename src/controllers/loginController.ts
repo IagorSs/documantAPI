@@ -18,11 +18,11 @@ class Login {
     try {
       const user = await User.find(username);
       if (user.message !== null) {
-        return res.status(404).json({ error: 'user not found' });
+        return res.status(404).json({ error: 'usuário não encontrado' });
       }
       const match = await bcrypt.compare(password, user.Item.password);
       if (!match) {
-        return res.status(401).json({ error: 'wrong password' });
+        return res.status(401).json({ error: 'senha incorreta' });
       }
       const userForToken = {
         username,
@@ -33,11 +33,11 @@ class Login {
       const refreshToken = jwt.sign(userForToken, auth.refreshSecret);
       const insert = await TokenController.insertToken(refreshToken);
       if (insert.message !== null) {
-        return res.status(500).json({ error: insert.message });
+        return res.status(500).json({ error: `ocorreu um erro - ${insert.message}` });
       }
       return res.json({ accessToken, refreshToken });
     } catch (error) {
-      return res.json({ error1: error.message });
+      return res.json({ error1: `Ocorreu um erro inesperado - ${error.message}` });
     }
   }
 
