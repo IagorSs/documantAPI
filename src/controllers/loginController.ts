@@ -6,6 +6,7 @@ import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
 import User from './ourUserController';
 import auth from '../config/auth';
+import TokenController from './tokenController';
 
 class Login {
   static async getClient() {
@@ -16,7 +17,6 @@ class Login {
     const { username, password } = req.body;
     try {
       const user = await User.find(username);
-      console.log(user);
       if (user.message !== null) {
         return res.status(404).json({ error: 'user not found' });
       }
@@ -30,7 +30,12 @@ class Login {
         (caso ache desnecessário, só tirar a chave id do json) */
       };
       const accessToken = jwt.sign(userForToken, auth.secret, { expiresIn: auth.expire });
-      return res.json({ accessToken });
+      const refreshToken = jwt.sign(userForToken, auth.refreshSecret);
+      const insert = await TokenController.insertToken(refreshToken);
+      if (insert.message !== null) {
+        return res.status(500).json({ error: insert.message });
+      }
+      return res.json({ accessToken, refreshToken });
     } catch (error) {
       return res.json({ error1: error.message });
     }
