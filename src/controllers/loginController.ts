@@ -42,7 +42,12 @@ class Login {
   }
 
   static async logout(req:Request, res:Response) {
-    /* aqui a gente precisa só excluir o refreshToken de onde ele estiver armazenado */
+    const { token } = req; // não me lembro de como resolver esse errinho aqui
+    const del = await TokenController.deleteToken(token);
+    if (del.message !== null) {
+      return res.status(500).json({ error: `erro ao fazer logout - ${del.message}` });
+    }
+    return res.status(200);
   }
 }
 

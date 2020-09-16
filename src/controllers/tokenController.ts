@@ -34,6 +34,31 @@ class TokenController {
       return error.message;
     }
   }
+
+  static async deleteToken(token:string) {
+    const params = {
+      TableName: 'tokens',
+      Key: { token },
+    };
+    try {
+      const docClient = await TokenController.getClient();
+      const returningObg = new Promise<Object>((resolve) => {
+        docClient.delete(params, (err) => {
+          if (err) {
+            console.log(`erro ao deletar o token - ${err}`);
+            resolve({ message: 'erro ao fazer logout' });
+            return err;
+          }
+          resolve({ message: null });
+          return err;
+        });
+      });
+      await returningObg;
+      return returningObg;
+    } catch (error) {
+      return error.message;
+    }
+  }
 }
 
 export default TokenController;

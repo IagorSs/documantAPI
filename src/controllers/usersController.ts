@@ -99,7 +99,7 @@ class UsersController {
     };
 
     try {
-      const docClient = await this.getClient();
+      const docClient = await UsersController.getClient();
 
       return docClient.delete(params, (err) => {
         if (err) return res.send(500).json({ error: err.message });
