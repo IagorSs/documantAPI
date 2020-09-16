@@ -18,10 +18,10 @@ class User {
       const docClient = await User.getClient();
       const returningObj = new Promise<Object>((resolve) => {
         docClient.get(params, (err, data) => {
-          if (!data) { // Nunca entra aqui, mesmo se não encontrar usuário JURO Q TENTEI TUDO
-            console.log(`erro no find 2 - ${err.message}`);
+          if (Object.keys(data).length === 0) {
+            console.log(`erro no find 2 - ${err}`); // err sempre retorna null (mesmo cao não ache usuário)
             resolve({
-              message: err,
+              message: 'user not found',
             });
             return err;
           }
@@ -35,7 +35,7 @@ class User {
       await returningObj;
       return returningObj;
     } catch (error) {
-      return error;
+      return error.message;
     }
   }
 }
