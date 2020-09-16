@@ -17,7 +17,7 @@ class Login {
     try {
       const user = await User.find(username);
       console.log(user);
-      if (user.message != null) {
+      if (!user.Item) {
         return res.status(404).json({ error: 'user not found' });
       }
       const match = await bcrypt.compare(password, user.Item.password);

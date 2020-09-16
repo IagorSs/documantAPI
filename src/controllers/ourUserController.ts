@@ -16,18 +16,24 @@ class User {
     };
     try {
       const docClient = await User.getClient();
-      // eslint-disable-next-line consistent-return
-      return docClient.get(params, (err, data) => {
-        if (err) {
-          console.log(`erro no find 2 - ${err.message}`);
-          return err;
-        }
-        const returningObj = {
-          ...data,
-          message: null,
-        };
-        return returningObj;
+      const returningObj = new Promise<Object>((resolve) => {
+        docClient.get(params, (err, data) => {
+          if (!data) { // Nunca entra aqui, mesmo se não encontrar usuário JURO Q TENTEI TUDO
+            console.log(`erro no find 2 - ${err.message}`);
+            resolve({
+              message: err,
+            });
+            return err;
+          }
+          resolve({
+            ...data,
+            message: null,
+          });
+          return data;
+        });
       });
+      await returningObj;
+      return returningObj;
     } catch (error) {
       return error;
     }
