@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import jwt from 'jsonwebtoken';
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
@@ -14,11 +15,12 @@ class Login {
   static async login(req:Request, res:Response) {
     const { username, password } = req.body;
     try {
-      const user = User.find(username);
+      const user = await User.find(username);
+      console.log(user);
       if (user.message != null) {
         return res.status(404).json({ error: 'user not found' });
       }
-      const match = await bcrypt.compare(password, user.password);
+      const match = await bcrypt.compare(password, user.Item.password);
       if (!match) {
         return res.status(401).json({ error: 'wrong password' });
       }
@@ -30,7 +32,7 @@ class Login {
       const accessToken = jwt.sign(userForToken, auth.secret, { expiresIn: auth.expire });
       return res.json({ accessToken });
     } catch (error) {
-      return res.json({ error: error.message });
+      return res.json({ error1: error.message });
     }
   }
 
