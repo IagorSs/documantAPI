@@ -1,11 +1,11 @@
 node_modules
 examples
-temp/
-
-!temp/.gitkeep
+tmp
+src_2
 
 mykeys.json
 
+*.env
 *.txt
 
 !guide.txt

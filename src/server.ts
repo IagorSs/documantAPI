@@ -1,28 +1,20 @@
-import express from 'express';
-import UsersController from './controllers/usersController';
-import filesController, {} from './controllers/filesController';
-import Config from './config';
-import LoginController from './controllers/loginController';
+import express, { json } from 'express';
+import morgan from 'morgan';
+import cors from 'cors';
+import { config } from 'dotenv';
+import AWSConfig from './config/AWS';
+import routes from './routes';
+
+config();
 
 const app = express();
-const routes = express.Router();
 
-Config.index();
+AWSConfig();
 
-app.use(express.json());
+app.use(cors());
+app.use(json());
 app.use(routes);
-
-routes
-  .get('/users', UsersController.find)
-  .post('/users', UsersController.create)
-  .put('/users', UsersController.update)
-  .delete('/users', UsersController.delete)
-
-  .get('/login', LoginController.login)
-
-  .get('/files', filesController.getFile)
-
-  .get('/exampleTeste', filesController.getExampleFE);
+app.use(morgan('dev'));
 
 app.listen(8000, () => {
   // eslint-disable-next-line no-console
