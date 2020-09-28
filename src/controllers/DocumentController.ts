@@ -40,8 +40,7 @@ export default class DocumentController {
 
   static async find(req:Request, res:Response) {
     try {
-      await DocumentController.getItem(req.body.title);
-      return res.status(200).json();
+      return res.status(200).json(await DocumentController.getItem(req.body.title));
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }
@@ -70,6 +69,7 @@ export default class DocumentController {
             updatedOn: new Date().toString(),
             isDeleted: false,
           },
+          isPublic: false,
           titleID,
           title,
           description,
@@ -119,6 +119,40 @@ export default class DocumentController {
       return res.status(200).json(data);
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
+    }
+  }
+
+  static async setPublic(req:Request, res:Response) {
+    try {
+      const { titleID } = req.body;
+
+      const dataItem = await DocumentController.getItem(titleID);
+
+      const params = {
+        TableName: DocumentController.TableName,
+        Key: { titleID },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+            },
+          },
+          isPublic: {
+            Action: 'PUT',
+            Value: true,
+          },
+        },
+      };
+
+      const docClient = await DocumentController.getClient();
+
+      const data = await docClient.update(params).promise();
+
+      return res.status(200).json(data);
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({ error: error.message });
     }
   }
 }

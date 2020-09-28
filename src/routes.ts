@@ -19,7 +19,8 @@ routes
 
   .get('/document', DocumentController.find)
   .post('/document', DocumentController.create)
-  .put('./document', DocumentController.update)
+  .put('/document', DocumentController.update)
+  .put('/document/public', DocumentController.setPublic)
 
   .get('/login', LoginController.login)
 
