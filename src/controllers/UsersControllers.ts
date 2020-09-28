@@ -3,112 +3,325 @@
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
+import IExternDocument, {} from '../interfaces/DynamoDB/IExternDocument';
 
-const saltRounds = 10;
+export default class UsersController {
+  static readonly TableName = process.env.USER_TABLE_NAME || ''
 
-class UsersController {
   static async getClient() {
     return new AWS.DocumentClient();
   }
 
+  static checkUserEnv() {
+    if (!process.env.USER_TABLE_NAME) {
+      throw {
+        statusCode: 500,
+        message: 'User table not setted',
+      };
+    }
+  }
+
+  static async getItem(email:string) {
+    UsersController.checkUserEnv();
+
+    const docClient = await UsersController.getClient();
+
+    const data = await docClient.get({
+      TableName: UsersController.TableName,
+      Key: { emailID: email },
+    }).promise();
+
+    if (!data.Item) {
+      throw {
+        statusCode: 500,
+        message: 'Item not found',
+      };
+    }
+    return data.Item;
+  }
+
   static async create(req:Request, res:Response) {
-    const {
-      user,
-      email,
-      password,
-    } = req.body;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const input = {
-      user,
-      email_id: email,
-      password: hashedPassword,
-      created_on: new Date().toString(),
-      updated_on: new Date().toString(),
-      is_deleted: false,
-    };
-    const params = {
-      TableName: 'users_document_db',
-      Item: input,
-    };
     try {
+      UsersController.checkUserEnv();
+
       const docClient = await UsersController.getClient();
 
-      return docClient.put(params, (err, data) => {
-        if (err) {
-          console.log(`erro - ${JSON.stringify(err, null, 2)}`);
-          return res.status(500).json({ error: err.message });
-        }
-        return res.status(200).json(data);
+      const {
+        name,
+        email,
+        companyName,
+        CPF,
+        pass,
+      } = req.body;
+
+      const alreadyExistUserPromise = new Promise<boolean>((resolve) => {
+        docClient.get({
+          TableName: UsersController.TableName,
+          Key: { emailID: email },
+        }, (err, data) => resolve(data.Item != null));
       });
+
+      if (await alreadyExistUserPromise) {
+        throw {
+          statusCode: 500,
+          message: 'Trying create an user that already exists',
+        };
+      }
+
+      const hashedPassword = await bcrypt.hash(pass, 10);
+      const input = {
+        state: {
+          cretedOn: new Date().toString(),
+          updatedOn: new Date().toString(),
+          isDeleted: false,
+        },
+        name,
+        emailID: email,
+        companyName,
+        CPF,
+        password: hashedPassword,
+        myTodoTemplates: [],
+        myDocuments: [],
+        todoTemplates: [],
+        documents: [],
+      };
+
+      const params = {
+        TableName: UsersController.TableName,
+        Item: input,
+      };
+
+      const data = await docClient.put(params).promise();
+      return res.status(200).json(data);
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(err.statusCode).json({ error: err.message });
     }
   }
 
   static async find(req:Request, res:Response) {
-    const { user } = req.body;
-    const params = {
-      TableName: 'users_document_db',
-      Key: {
-        user,
-      },
-    };
     try {
-      const docClient = await UsersController.getClient();
-      return docClient.get(params, (err, data) => {
-        if (err) {
-          console.log(`erro no find 1 - ${err.message}`);
-          return res.status(500).json({ error: err.message });
-        }
-        return res.status(200).json(data);
-      });
+      const dataItem = await UsersController.getItem(req.body.email);
+
+      delete dataItem.password;
+
+      return res.status(200).json(dataItem);
     } catch (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(error.statusCode).json({ error: error.message });
     }
   }
 
   static async update(req:Request, res:Response) {
-    const { user, newEmail } = req.body;
-    const params = {
-      TableName: 'users_document_db',
-      Key: { user },
-      AttributeUpdates: {
-        email_id: {
-          Action: 'PUT',
-          Value: newEmail,
-        },
-      },
-    };
     try {
+      UsersController.checkUserEnv();
+
+      const { email, key, value } = req.body;
+
+      const dataItem = await UsersController.getItem(email);
+
+      const params = {
+        TableName: UsersController.TableName,
+        Key: { email },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+            },
+          },
+          [key]: {
+            Action: 'PUT',
+            Value: value,
+          },
+        },
+      };
+
       const docClient = await UsersController.getClient();
 
-      return docClient.update(params, (err, data) => {
-        if (err) return res.status(500).json({ error: err.message });
-        return res.status(200).json(data);
-      });
+      const data = await docClient.update(params).promise();
+
+      return res.status(200).json(data);
     } catch (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(error.statusCode).json({ error: error.message });
     }
   }
 
   static async delete(req:Request, res:Response) {
-    const { email } = req.body;
-    const params = {
-      TableName: 'users_document_db',
-      Key: { email_id: email },
-    };
-
     try {
+      UsersController.checkUserEnv();
+
+      const {
+        email,
+      } = req.body;
+
+      const dataItem = await UsersController.getItem(email);
+
+      const client = await UsersController.getClient();
+
+      const data = await client.delete({
+        TableName: UsersController.TableName,
+        Key: { emailID: email },
+      }).promise();
+
+      return res.status(200).json(data);
+    } catch (error) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+  }
+
+  static async fakeDelete(req:Request, res:Response) {
+    try {
+      UsersController.checkUserEnv();
+
+      const {
+        email,
+      } = req.body;
+
+      const dataItem = await UsersController.getItem(email);
+
+      const params = {
+        TableName: UsersController.TableName,
+        Key: { emailID: email },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+              isDeleted: true,
+            },
+          },
+        },
+      };
+
       const docClient = await UsersController.getClient();
 
-      return docClient.delete(params, (err) => {
-        if (err) return res.send(500).json({ error: err.message });
-        return res.send(200).json({ message: 'usuário excluído com sucesso' });
-      });
+      const data = await docClient.update(params).promise();
+
+      return res.status(200).json(data);
     } catch (error) {
-      return res.status(500).json({ error: `não foi possível concluir a solicitação - ${error.message}` });
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+  }
+
+  static async addItem(req:Request, res:Response) {
+    try {
+      UsersController.checkUserEnv();
+
+      const {
+        email,
+        itemID,
+        type,
+        owner,
+      } = req.body;
+
+      const dataItem = await UsersController.getItem(email);
+
+      let key;
+
+      if (type === 'document') key = owner ? 'myDocuments' : 'documents';
+      else if (type === 'todo') key = owner ? 'myTodoTemplates' : 'todoTemplates';
+
+      if (!key) {
+        throw {
+          statusCode: 500,
+          message: 'Invalid type of Item',
+        };
+      }
+
+      const Value = owner ? [...dataItem[key], itemID] : [...dataItem[key], {
+        isDone: false,
+        itemID,
+      }];
+
+      const params = {
+        TableName: UsersController.TableName,
+        Key: { emailID: email },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+            },
+          },
+          [key]: {
+            Action: 'PUT',
+            Value,
+          },
+        },
+      };
+
+      const docClient = await UsersController.getClient();
+
+      await docClient.update(params).promise();
+
+      return res.sendStatus(200);
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  }
+
+  static async setDoneItems(req:Request, res:Response) {
+    try {
+      UsersController.checkUserEnv();
+
+      const {
+        email,
+        changeItems,
+        type,
+      } = req.body;
+
+      const dataItem = await UsersController.getItem(email);
+
+      let key:string = '';
+
+      if (type === 'document') key = 'documents';
+      else if (type === 'todo') key = 'todoTemplates';
+
+      if (!key) {
+        throw {
+          statusCode: 500,
+          message: 'Invalid type of Item',
+        };
+      }
+
+      changeItems.map((item:{
+        itemIndex: number,
+        isDone: boolean
+      }) => {
+        dataItem[key][item.itemIndex] = {
+          ...dataItem[key][item.itemIndex],
+          isDone: item.isDone,
+        };
+        return null;
+      });
+
+      const params = {
+        TableName: UsersController.TableName,
+        Key: { emailID: email },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+            },
+          },
+          [key]: {
+            Action: 'PUT',
+            Value: dataItem[key],
+          },
+        },
+      };
+
+      const docClient = await UsersController.getClient();
+
+      await docClient.update(params).promise();
+
+      return res.sendStatus(200);
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({ error: error.message });
     }
   }
 }
-
-export default UsersController;

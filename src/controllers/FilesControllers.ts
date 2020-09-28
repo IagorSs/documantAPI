@@ -2,43 +2,60 @@ import AWS_S3 from 'aws-sdk/clients/s3';
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
 
-export class FilesController {
+export default class FilesController {
   static async getClient() {
-    return new AWS_S3();
+    return new AWS_S3({ signatureVersion: 'v4' });
   }
 
   static async uploadFile(req:Request, res:Response) {
-    const File = req.file;
+    const File:any = req.file;
 
-    return res.json({
+    return res.status(200).json({
       originalName: File.originalname,
       type: File.mimetype,
       size: File.size,
-      key: File.key,
-      location: File.location,
+      S3key: File.key,
+      URLDownload: File.location,
     });
-  }
-
-  static async getFileStorage(Bucket:string, Key:string) {
-    const s3 = await FilesController.getClient();
-
-    return s3.getObject({ Bucket, Key });
   }
 
   static async getFile(req:Request, res:Response) {
     try {
-      const { Bucket, Key } = req.body;
+      const s3 = await FilesController.getClient();
 
-      const storageFile = await FilesController.getFileStorage(Bucket, Key);
+      const { key } = req.body;
+      const Bucket = process.env.DOCUMANT_BUCKET_NAME || '';
 
-      res.sendStatus(200);
+      await s3.headObject({ Bucket, Key: key }).promise();
 
-      console.log(storageFile);
-      return storageFile;
+      const storageFile = s3.getSignedUrl('getObject', {
+        Bucket,
+        Key: key,
+        Expires: 60,
+      });
+
+      return res.status(200).json({ tempPreviewURL: storageFile });
     } catch (error) {
-      return res.status(500).json(error);
+      return res.status(error.statusCode).json({ error: error.code });
+    }
+  }
+
+  static async deleteFile(req:Request, res:Response) {
+    try {
+      const s3 = await FilesController.getClient();
+
+      const {
+        key,
+      } = req.body;
+
+      await s3.deleteObject({
+        Bucket: process.env.DOCUMANT_BUCKET_NAME || '',
+        Key: key,
+      }).promise();
+
+      return res.sendStatus(200);
+    } catch (error) {
+      return res.status(error.statusCode).json({ error: error.message });
     }
   }
 }
-
-export default FilesController;
