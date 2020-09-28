@@ -10,16 +10,16 @@ export default {
   storage: multerS3({
     s3: new AWS.S3(),
     // s3: new AWS_S3(),
-    bucket: 'documant',
+    bucket: process.env.DOCUMANT_BUCKET_NAME || '',
     contentType: multerS3.DEFAULT_CONTENT_TYPE,
     acl: 'public-read',
     key: (
       req:Request,
       file:Express.Multer.File,
-      cb:(error: Error | null, filename: string) => void,
+      cb:(error: Error | null, filename?: string) => void,
     ) => {
       crypto.randomBytes(16, (err, hash) => {
-        if (err) cb(err, '');
+        if (err) cb(err);
 
         const fileName = `${hash.toString('hex')}-${file.originalname}`;
 
@@ -32,10 +32,8 @@ export default {
   },
   fileFilter: (req:Request, file:Express.Multer.File, cb:FileFilterCallback) => {
     const allowedMimes = [
-      'image/jpeg',
-      'image/pjpeg',
-      'image/png',
       'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
 
     if (allowedMimes.includes(file.mimetype)) cb(null, true);
