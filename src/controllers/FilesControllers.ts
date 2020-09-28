@@ -7,7 +7,7 @@ export default class FilesController {
     return new AWS_S3({ signatureVersion: 'v4' });
   }
 
-  static async uploadFile(req:Request, res:Response) {
+  static async create(req:Request, res:Response) {
     const File:any = req.file;
 
     return res.status(200).json({
@@ -19,7 +19,7 @@ export default class FilesController {
     });
   }
 
-  static async getFile(req:Request, res:Response) {
+  static async find(req:Request, res:Response) {
     try {
       const s3 = await FilesController.getClient();
 
@@ -40,7 +40,7 @@ export default class FilesController {
     }
   }
 
-  static async deleteFile(req:Request, res:Response) {
+  static async delete(req:Request, res:Response) {
     try {
       const s3 = await FilesController.getClient();
 

@@ -23,9 +23,9 @@ routes
 
   .get('/login', LoginController.login)
 
-  .get('/files', FilesController.getFile)
-  .delete('/files', FilesController.deleteFile)
-  .post('/files', multer(MultConfig).single('file'), FilesController.uploadFile)
+  .get('/files', FilesController.find)
+  .post('/files', multer(MultConfig).single('file'), FilesController.create)
+  .delete('/files', FilesController.delete)
 
   // Get all wrong routes
   .all('*', (req, res) => res.status(404).json({ error: 'Route not found' }));
