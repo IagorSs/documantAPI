@@ -2,7 +2,7 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-import Request from '../../interfaces/Request';
+import Request from '../../interfaces/IRequest';
 import authConfig from '../../config/auth';
 
 // eslint-disable-next-line consistent-return
