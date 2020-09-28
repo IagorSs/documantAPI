@@ -28,6 +28,6 @@ routes
   .post('/files', multer(MultConfig).single('file'), FilesController.uploadFile)
 
   // Get all wrong routes
-  .all('*', (req, res) => res.status(200).json({ Erro: 'Error 404, route not found' }));
+  .all('*', (req, res) => res.status(404).json({ error: 'Route not found' }));
 
 export default routes;
