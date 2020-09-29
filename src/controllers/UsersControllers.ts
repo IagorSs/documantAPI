@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
 // eslint-disable-next-line no-unused-vars
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
 import IExternDocument, {} from '../interfaces/DynamoDB/IExternDocument';
+import Request from '../interfaces/IRequest';
 
 export default class UsersController {
   static readonly TableName = process.env.USER_TABLE_NAME || ''
@@ -64,7 +65,7 @@ export default class UsersController {
       if (await alreadyExistUserPromise) {
         throw {
           statusCode: 500,
-          message: 'Trying create an user that already exists',
+          message: 'Trying to create an user that already exists',
         };
       }
 
@@ -112,6 +113,12 @@ export default class UsersController {
 
   static async update(req:Request, res:Response) {
     try {
+      if (!req.user) {
+        throw {
+          statusCode: 401,
+          message: 'there is no user logged in',
+        };
+      }
       UsersController.checkUserEnv();
 
       const { email, key, value } = req.body;

@@ -45,7 +45,7 @@ class Login {
     // eslint-disable-next-line max-len
     // const { token } = req.headers.authorization; // não me lembro de como resolver esse errinho aqui
     const { token } = req.body;
-    if (token === null) {
+    if (!token) {
       // eslint-disable-next-line quotes
       return res.status(400).json({ error: `token can't be null` });
     }

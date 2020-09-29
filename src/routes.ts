@@ -5,22 +5,23 @@ import FilesController from './controllers/FilesControllers';
 import LoginController from './controllers/LoginController';
 import MultConfig from './config/multer';
 import DocumentController from './controllers/DocumentController';
+import authenticate from './controllers/middlewares/auth';
 
 const routes = Router();
 
 routes
   .get('/users', UsersController.find)
   .post('/users', UsersController.create)
-  .put('/users', UsersController.update)
-  .put('/users/item', UsersController.addItem)
-  .put('/users/done', UsersController.setDoneItems)
-  .delete('/users', UsersController.delete)
-  .delete('/users/fake', UsersController.fakeDelete)
+  .put('/users', authenticate, UsersController.update)
+  .put('/users/item', authenticate, UsersController.addItem)
+  .put('/users/done', authenticate, UsersController.setDoneItems)
+  .delete('/users', authenticate, UsersController.delete)
+  .delete('/users/fake', authenticate, UsersController.fakeDelete)
 
-  .get('/document', DocumentController.find)
-  .post('/document', DocumentController.create)
-  .put('/document', DocumentController.update)
-  .put('/document/public', DocumentController.setPublic)
+  .get('/document', authenticate, DocumentController.find)
+  .post('/document', authenticate, DocumentController.create)
+  .put('/document', authenticate, DocumentController.update)
+  .put('/document/public', authenticate, DocumentController.setPublic)
 
   .get('/login', LoginController.login)
   .get('/logout', LoginController.logout)
