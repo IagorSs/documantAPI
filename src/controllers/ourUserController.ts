@@ -7,35 +7,29 @@ class User {
     return new AWS.DocumentClient();
   }
 
-  static async find(username:string) {
+  static async find(email:string) {
     const params = {
-      TableName: 'users_document_db',
+      TableName: 'user_documant_db',
       Key: {
-        user: username,
+        emailID: email,
       },
     };
     try {
       const docClient = await User.getClient();
-      const returningObj = new Promise<Object>((resolve) => {
-        docClient.get(params, (err, data) => {
-          if (Object.keys(data).length === 0) {
-            console.log(`erro no find 2 - ${err}`); // err sempre retorna null (mesmo caso não ache usuário)
-            resolve({
-              message: 'usuário não encontrado',
-            });
-            return err;
-          }
-          resolve({
-            ...data,
-            message: null,
-          });
-          return data;
-        });
-      });
-      await returningObj;
-      return returningObj;
+      const data = await docClient.get(params).promise();
+      if (!data.Item) {
+        throw {
+          statusCode: 500,
+          message: 'Item not found',
+        };
+      }
+      return data.Item;
     } catch (error) {
-      return error.message;
+      const { message, statusCode } = error;
+      return {
+        message,
+        statusCode,
+      };
     }
   }
 }

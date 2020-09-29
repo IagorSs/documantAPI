@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import UsersController from './controllers/UsersControllers';
 import FilesController from './controllers/FilesControllers';
-import LoginController from './controllers/loginController';
+import LoginController from './controllers/LoginController';
 import MultConfig from './config/multer';
 import DocumentController from './controllers/DocumentController';
 
@@ -23,6 +23,7 @@ routes
   .put('/document/public', DocumentController.setPublic)
 
   .get('/login', LoginController.login)
+  .get('/logout', LoginController.logout)
 
   .get('/files', FilesController.find)
   .post('/files', multer(MultConfig).single('file'), FilesController.create)

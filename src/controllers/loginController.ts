@@ -4,9 +4,9 @@ import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
-import User from './ourUserController';
+import User from './OurUserController';
 import auth from '../config/auth';
-import TokenController from './tokenController';
+import TokenController from './TokenController';
 
 class Login {
   static async getClient() {
@@ -14,18 +14,18 @@ class Login {
   }
 
   static async login(req:Request, res:Response) {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     try {
-      const user = await User.find(username);
-      if (user.message !== null) {
-        return res.status(404).json({ error: 'usuário não encontrado' });
+      const user = await User.find(email);
+      if (user.message !== undefined) {
+        return res.status(404).json({ error: user.message });
       }
-      const match = await bcrypt.compare(password, user.Item.password);
+      const match = await bcrypt.compare(password, user.password);
       if (!match) {
         return res.status(401).json({ error: 'senha incorreta' });
       }
       const userForToken = {
-        username,
+        username: email,
         id: 0, /* algum id q a gente tem q definir pra cada user
         (caso ache desnecessário, só tirar a chave id do json) */
       };
@@ -42,12 +42,18 @@ class Login {
   }
 
   static async logout(req:Request, res:Response) {
-    const { token } = req; // não me lembro de como resolver esse errinho aqui
+    // eslint-disable-next-line max-len
+    // const { token } = req.headers.authorization; // não me lembro de como resolver esse errinho aqui
+    const { token } = req.body;
+    if (token === null) {
+      // eslint-disable-next-line quotes
+      return res.status(400).json({ error: `token can't be null` });
+    }
     const del = await TokenController.deleteToken(token);
-    if (del.message !== null) {
+    if (del.message !== undefined) {
       return res.status(500).json({ error: `erro ao fazer logout - ${del.message}` });
     }
-    return res.status(200);
+    return res.status(200).json({});
   }
 }
 

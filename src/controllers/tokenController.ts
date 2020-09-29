@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-// eslint-disable-next-line no-unused-vars
 import AWS from 'aws-sdk/clients/dynamodb';
 
 class TokenController {
@@ -36,25 +35,13 @@ class TokenController {
   }
 
   static async deleteToken(token:string) {
-    const params = {
-      TableName: 'tokens',
-      Key: { token },
-    };
     try {
       const docClient = await TokenController.getClient();
-      const returningObg = new Promise<Object>((resolve) => {
-        docClient.delete(params, (err) => {
-          if (err) {
-            console.log(`erro ao deletar o token - ${err}`);
-            resolve({ message: 'erro ao fazer logout' });
-            return err;
-          }
-          resolve({ message: null });
-          return err;
-        });
-      });
-      await returningObg;
-      return returningObg;
+      const data = await docClient.delete({
+        TableName: 'tokens',
+        Key: { token },
+      }).promise();
+      return data;
     } catch (error) {
       return error.message;
     }
