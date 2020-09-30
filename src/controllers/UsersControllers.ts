@@ -112,7 +112,7 @@ export default class UsersController {
 
   static async update(req:Request, res:Response) {
     try {
-      if (!req.user) {
+      if (!req.body.user) {
         throw {
           statusCode: 401,
           message: 'there is no user logged in',
