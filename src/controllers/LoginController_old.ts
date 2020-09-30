@@ -4,9 +4,9 @@ import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
-import User from './OurUserController';
+import User from './ourUserController_old';
 import auth from '../config/auth';
-import TokenController from './TokenController';
+import TokenController from './tokenController_old';
 
 class Login {
   static async getClient() {
