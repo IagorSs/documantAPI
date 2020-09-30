@@ -1,30 +1,47 @@
+/* eslint-disable quotes */
 /* eslint-disable no-unused-vars */
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-import Request from '../../interfaces/IRequest';
 import authConfig from '../../config/auth';
 
-// eslint-disable-next-line consistent-return
-function authenticate(req:Request, res:Response, next:NextFunction) {
-  const { token } = req.headers.authorization;
-  if (token === undefined) {
-    // eslint-disable-next-line quotes
-    return res.status(401).json({ error: `token can't be null` });
-  }
-  if (!token) {
-    // eslint-disable-next-line quotes
-    return res.status(204).json({ error: `token can't be null` });
-  }
+async function authenticate(req:Request, res:Response, next:NextFunction) {
+  try {
+    const token = req.headers.authorization;
 
-  // eslint-disable-next-line consistent-return
-  jwt.verify(token, authConfig.secret, (err, user) => {
-    if (err) {
-      return res.status(401).json({ error: 'error while authenticating the token' });
+    if (token === undefined) {
+      throw {
+        statusCode: 401,
+        message: `token can't be null`,
+      };
     }
-    req.user = user;
+
+    if (!token) {
+      throw {
+        statusCode: 204,
+        message: `token can't be null`,
+      };
+    }
+
+    const jwtVerify = new Promise<void>((resolve) => {
+      jwt.verify(token, authConfig.secret, (err, user) => {
+        if (err) {
+          throw {
+            statusCode: 401,
+            message: 'error while authenticating the token',
+          };
+        }
+        req.body.user = user;
+        resolve();
+      });
+    });
+
+    await jwtVerify;
+
     next();
-  });
+  } catch (err) {
+    res.status(err.statusCode).json({ error: err.message });
+  }
 }
 
 export default authenticate;

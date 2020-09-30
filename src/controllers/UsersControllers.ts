@@ -1,10 +1,9 @@
 /* eslint-disable no-console */
 // eslint-disable-next-line no-unused-vars
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
 import IExternDocument, {} from '../interfaces/DynamoDB/IExternDocument';
-import Request from '../interfaces/IRequest';
 
 export default class UsersController {
   static readonly TableName = process.env.USER_TABLE_NAME || ''
