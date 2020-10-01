@@ -9,29 +9,24 @@ async function authenticate(req:Request, res:Response, next:NextFunction) {
   try {
     const token = req.headers.authorization;
 
-    if (token === undefined) {
+    if (!token) {
       throw {
         statusCode: 401,
         message: `token can't be null`,
       };
     }
 
-    if (!token) {
-      throw {
-        statusCode: 204,
-        message: `token can't be null`,
-      };
-    }
-
     const jwtVerify = new Promise<void>((resolve) => {
-      jwt.verify(token, authConfig.secret, (err, user) => {
+      jwt.verify(token, authConfig.secret, (err, email) => {
         if (err) {
           throw {
             statusCode: 401,
             message: 'error while authenticating the token',
           };
         }
-        req.body.user = user;
+
+        req.body.email = email;
+
         resolve();
       });
     });

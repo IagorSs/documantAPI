@@ -8,20 +8,27 @@ import auth from '../config/auth';
 import TokenController from './TokenController';
 
 class Login {
+  static checkSecretJWTEnv() {
+    if (!process.env.AUTH_SECRET || !process.env.AUTH_REFRESH_SECRET) {
+      throw {
+        statusCode: 500,
+        message: 'JWT secret not setted',
+      };
+    }
+
+    if (!process.env.AUTH_EXPIRE) {
+      throw {
+        statusCode: 500,
+        message: 'JWT without expires',
+      };
+    }
+  }
+
   static async login(req:Request, res:Response) {
     const { email, password } = req.body;
 
     try {
       const user = await User.getItem(email);
-
-      // WTF this user.message?
-      if (user.message !== undefined) {
-        throw {
-          statusCode: 404,
-          message: user.message,
-        };
-        // return res.status(404).json({ error: user.message });
-      }
 
       const match = await bcrypt.compare(password, user.password);
 
@@ -32,19 +39,13 @@ class Login {
         };
       }
 
-      const userForToken = {
-        username: email,
-        id: 0, /* algum id q a gente tem q definir pra cada user
-        (caso ache desnecessário, só tirar a chave id do json) */
-      };
+      const accessToken = jwt.sign(email, auth.secret, { expiresIn: auth.expire });
 
-      const accessToken = jwt.sign(userForToken, auth.secret, { expiresIn: auth.expire });
+      const refreshToken = jwt.sign(email, auth.refreshSecret);
 
-      const refreshToken = jwt.sign(userForToken, auth.refreshSecret);
+      await TokenController.insertToken({ tokenId: accessToken, refreshToken });
 
-      await TokenController.insertToken(refreshToken);
-
-      return res.status(200).json({ accessToken, refreshToken });
+      return res.status(200).json({ accessToken });
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }

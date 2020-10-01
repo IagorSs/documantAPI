@@ -34,7 +34,7 @@ export default class UsersController {
     if (!data.Item) {
       throw {
         statusCode: 500,
-        message: 'Item not found',
+        message: 'User not found',
       };
     }
     return data.Item;
@@ -71,7 +71,7 @@ export default class UsersController {
       const hashedPassword = await bcrypt.hash(pass, 10);
       const input = {
         state: {
-          cretedOn: new Date().toString(),
+          createdOn: new Date().toString(),
           updatedOn: new Date().toString(),
           isDeleted: false,
         },
@@ -112,15 +112,16 @@ export default class UsersController {
 
   static async update(req:Request, res:Response) {
     try {
-      if (!req.body.user) {
+      const { email, key, value } = req.body;
+
+      if (!email) {
         throw {
           statusCode: 401,
           message: 'there is no user logged in',
         };
       }
-      UsersController.checkUserEnv();
 
-      const { email, key, value } = req.body;
+      UsersController.checkUserEnv();
 
       const dataItem = await UsersController.getItem(email);
 

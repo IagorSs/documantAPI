@@ -2,18 +2,16 @@
 import AWS from 'aws-sdk/clients/dynamodb';
 
 class TokenController {
+  static readonly TableName = process.env.TOKEN_TABLE_NAME || '';
+
   static async getClient() {
     return new AWS.DocumentClient();
   }
 
-  static async insertToken(token:string) {
-    const input = {
-      token,
-    };
-
+  static async insertToken(tokens:{tokenId:string, refreshToken:string}) {
     const params = {
-      TableName: 'tokens',
-      Item: input,
+      TableName: TokenController.TableName,
+      Item: tokens,
     };
 
     const docClient = await TokenController.getClient();
@@ -41,7 +39,7 @@ class TokenController {
 
     const data = await docClient.delete({
       TableName: 'tokens',
-      Key: { token },
+      Key: { tokenId: token },
     }).promise();
 
     return data;

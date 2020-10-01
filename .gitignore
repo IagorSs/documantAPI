@@ -7,5 +7,6 @@ mykeys.json
 
 *.env
 *.txt
+*.vscode
 
 !guide.txt

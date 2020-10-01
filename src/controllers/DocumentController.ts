@@ -2,6 +2,7 @@ import AWS from 'aws-sdk/clients/dynamodb';
 import crypto from 'crypto';
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
+import UsersController from './UsersControllers';
 
 export default class DocumentController {
   static readonly TableName = process.env.DOCUMENT_TABLE_NAME || ''
@@ -53,19 +54,26 @@ export default class DocumentController {
       const {
         title,
         description,
-        userID,
+        email,
         S3File,
       } = req.body;
 
       const client = await DocumentController.getClient();
 
-      const titleID = `${crypto.randomBytes(16).toString('hex')}-${title}`;
+      let titleID:string;
+      let hasTitle:boolean;
+
+      do {
+        titleID = `${crypto.randomBytes(16).toString('hex')}-${title}`;
+
+        hasTitle = false;
+      } while (hasTitle);
 
       const params = {
         TableName: DocumentController.TableName,
         Item: {
           state: {
-            cretedOn: new Date().toString(),
+            createdOn: new Date().toString(),
             updatedOn: new Date().toString(),
             isDeleted: false,
           },
@@ -73,14 +81,23 @@ export default class DocumentController {
           titleID,
           title,
           description,
-          userCreator: userID,
+          userCreator: email,
           S3File,
         },
       };
 
       await client.put(params).promise();
 
-      return res.status(200).json({ ID: titleID });
+      req.body = {
+        email,
+        itemID: titleID,
+        type: 'document',
+        owner: true,
+      };
+
+      UsersController.addItem(req, res);
+
+      return res.sendStatus(200);
     } catch (error) {
       return res.status(error.statusCode || 500).json({ error: error.message });
     }
