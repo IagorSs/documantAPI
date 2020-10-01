@@ -21,7 +21,7 @@ async function authenticate(req:Request, res:Response, next:NextFunction) {
         if (err) {
           throw {
             statusCode: 401,
-            message: 'error while authenticating the token',
+            message: err.message,
           };
         }
 
