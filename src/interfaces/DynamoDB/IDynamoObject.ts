@@ -1,7 +1,7 @@
 /* eslint-disable semi */
 
 export interface IState {
-  cretedOn: string,
+  createdOn: string,
   updatedOn: string,
   isDeleted: boolean,
 }

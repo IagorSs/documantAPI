@@ -32,22 +32,22 @@ class Login {
 
       const match = await bcrypt.compare(password, user.password);
 
-      if (!match) {
-        throw {
-          statusCode: 401,
-          message: 'invalid password',
-        };
+      if (match) {
+        Login.checkSecretJWTEnv();
+
+        const accessToken = jwt.sign(email, auth.secret, { expiresIn: auth.expire });
+
+        const refreshToken = jwt.sign(email, auth.refreshSecret);
+
+        await TokenController.insertToken({ tokenId: accessToken, refreshToken });
+
+        return res.status(200).json({ accessToken });
       }
 
-      Login.checkSecretJWTEnv();
-
-      const accessToken = jwt.sign(email, auth.secret, { expiresIn: auth.expire });
-
-      const refreshToken = jwt.sign(email, auth.refreshSecret);
-
-      await TokenController.insertToken({ tokenId: accessToken, refreshToken });
-
-      return res.status(200).json({ accessToken });
+      throw {
+        statusCode: 401,
+        message: 'invalid password',
+      };
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }

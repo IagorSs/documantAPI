@@ -25,23 +25,30 @@ export default class DocumentController {
 
     const docClient = await DocumentController.getClient();
 
-    const data = await docClient.get({
-      TableName: DocumentController.TableName,
-      Key: { titleID },
-    }).promise();
+    try {
+      const data = await docClient.get({
+        TableName: DocumentController.TableName,
+        Key: { titleID },
+      }).promise();
 
-    if (!data.Item) {
-      throw {
-        statusCode: 500,
-        message: 'Item not found',
-      };
+      return data.Item;
+    } catch (error) {
+      return {};
     }
-    return data.Item;
   }
 
   static async find(req:Request, res:Response) {
     try {
-      return res.status(200).json(await DocumentController.getItem(req.body.title));
+      const data = await DocumentController.getItem(req.body.title);
+
+      if (!data) {
+        throw {
+          statusCode: 500,
+          message: 'Item not found',
+        };
+      }
+
+      return res.status(200).json(data);
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }
@@ -61,13 +68,11 @@ export default class DocumentController {
       const client = await DocumentController.getClient();
 
       let titleID:string;
-      let hasTitle:boolean;
 
       do {
         titleID = `${crypto.randomBytes(16).toString('hex')}-${title}`;
-
-        hasTitle = false;
-      } while (hasTitle);
+        // eslint-disable-next-line no-await-in-loop
+      } while (await DocumentController.getItem(titleID));
 
       const params = {
         TableName: DocumentController.TableName,
@@ -95,7 +100,7 @@ export default class DocumentController {
         owner: true,
       };
 
-      UsersController.addItem(req, res);
+      await UsersController.addItem(req, res);
 
       return res.sendStatus(200);
     } catch (error) {
@@ -110,6 +115,13 @@ export default class DocumentController {
       const { titleID, key, value } = req.body;
 
       const dataItem = await DocumentController.getItem(titleID);
+
+      if (!dataItem) {
+        throw {
+          statusCode: 500,
+          message: 'Item not found',
+        };
+      }
 
       const params = {
         TableName: DocumentController.TableName,
@@ -144,6 +156,13 @@ export default class DocumentController {
       const { titleID } = req.body;
 
       const dataItem = await DocumentController.getItem(titleID);
+
+      if (!dataItem) {
+        throw {
+          statusCode: 500,
+          message: 'Item not found',
+        };
+      }
 
       const params = {
         TableName: DocumentController.TableName,

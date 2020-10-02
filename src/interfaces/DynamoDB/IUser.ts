@@ -12,5 +12,5 @@ export default interface IUserItem extends IDynamoObject{
   myTodoTemplates: string[],
   myDocuments: string[],
   documents: IExternDocument[],
-  todoTemplates: IExternDocument[]
+  todoTemplates: ITodoTemplate[]
 }
