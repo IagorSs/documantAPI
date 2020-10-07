@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // eslint-disable-next-line no-unused-vars
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
 import IExternDocument, {} from '../interfaces/DynamoDB/IExternDocument';
@@ -40,7 +40,7 @@ export default class UsersController {
     return data.Item;
   }
 
-  static async create(req:Request, res:Response) {
+  static async create(req:Request, res:Response, next: NextFunction) {
     try {
       UsersController.checkUserEnv();
 
@@ -93,12 +93,12 @@ export default class UsersController {
 
       const data = await docClient.put(params).promise();
       return res.status(200).json(data);
-    } catch (err) {
-      return res.status(err.statusCode).json({ error: err.message });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  static async find(req:Request, res:Response) {
+  static async find(req:Request, res:Response, next: NextFunction) {
     try {
       const dataItem = await UsersController.getItem(req.body.email);
 
@@ -106,11 +106,11 @@ export default class UsersController {
 
       return res.status(200).json(dataItem);
     } catch (error) {
-      return res.status(error.statusCode || 500).json({ error: error.message });
+      return next(error);
     }
   }
 
-  static async update(req:Request, res:Response) {
+  static async update(req:Request, res:Response, next: NextFunction) {
     try {
       const { email, key, value } = req.body;
 
@@ -149,11 +149,11 @@ export default class UsersController {
 
       return res.status(200).json(data);
     } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return next(error);
     }
   }
 
-  static async delete(req:Request, res:Response) {
+  static async delete(req:Request, res:Response, next: NextFunction) {
     try {
       UsersController.checkUserEnv();
 
@@ -172,11 +172,11 @@ export default class UsersController {
 
       return res.status(200).json(data);
     } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return next(error);
     }
   }
 
-  static async fakeDelete(req:Request, res:Response) {
+  static async fakeDelete(req:Request, res:Response, next: NextFunction) {
     try {
       UsersController.checkUserEnv();
 
@@ -207,11 +207,11 @@ export default class UsersController {
 
       return res.status(200).json(data);
     } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return next(error);
     }
   }
 
-  static async addItem(req:Request, res:Response) {
+  static async addItem(req:Request, res:Response, next: NextFunction) {
     try {
       UsersController.checkUserEnv();
 
@@ -265,11 +265,11 @@ export default class UsersController {
 
       return res.sendStatus(200);
     } catch (error) {
-      return res.status(error.statusCode || 500).json({ error: error.message });
+      return next(error);
     }
   }
 
-  static async setDoneItems(req:Request, res:Response) {
+  static async setDoneItems(req:Request, res:Response, next: NextFunction) {
     try {
       UsersController.checkUserEnv();
 
@@ -328,7 +328,7 @@ export default class UsersController {
 
       return res.sendStatus(200);
     } catch (error) {
-      return res.status(error.statusCode || 500).json({ error: error.message });
+      return next(error);
     }
   }
 }
