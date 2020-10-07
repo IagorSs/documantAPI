@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
-import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
 import User from './UsersControllers';
 import auth from '../config/auth';
@@ -35,11 +34,11 @@ class Login {
       if (match) {
         Login.checkSecretJWTEnv();
 
-        const accessToken = jwt.sign(email, auth.secret, { expiresIn: auth.expire });
+        const accessToken = jwt.sign(email, auth.secret); // { expiresIn: auth.expire });
 
-        const refreshToken = jwt.sign(email, auth.refreshSecret);
+        // const refreshToken = jwt.sign(email, auth.refreshSecret);
 
-        await TokenController.insertToken({ tokenId: accessToken, refreshToken });
+        // await TokenController.insertToken({ tokenID: accessToken, refreshToken });
 
         return res.status(200).json({ accessToken });
       }
@@ -49,7 +48,7 @@ class Login {
         message: 'invalid password',
       };
     } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return res.status(error.statusCode || 500).json({ error: error.message });
     }
   }
 

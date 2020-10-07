@@ -106,7 +106,7 @@ export default class UsersController {
 
       return res.status(200).json(dataItem);
     } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return res.status(error.statusCode || 500).json({ error: error.message });
     }
   }
 
@@ -127,7 +127,7 @@ export default class UsersController {
 
       const params = {
         TableName: UsersController.TableName,
-        Key: { email },
+        Key: { emailID: email },
         AttributeUpdates: {
           state: {
             Action: 'PUT',
