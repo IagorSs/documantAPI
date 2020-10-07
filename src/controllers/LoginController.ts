@@ -52,7 +52,7 @@ class Login {
     }
   }
 
-  static async logout(req:Request, res:Response) {
+  static async logout(req:Request, res:Response, next: NextFunction) {
     try {
       const { token } = req.body;
 
@@ -66,8 +66,8 @@ class Login {
       await TokenController.deleteToken(token);
 
       return res.sendStatus(200);
-    } catch (err) {
-      return res.status(err.statusCode).json({ error: err.message });
+    } catch (error) {
+      return next(error);
     }
   }
 }
