@@ -3,7 +3,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import express, { json } from 'express';
+import express, {
+  json, Request, Response, NextFunction,
+} from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import AWSConfig from './config/AWS';
@@ -19,7 +21,7 @@ app.use(json());
 app.use(routes);
 app.use(morgan('dev'));
 
-app.use((err, req, res, next) => {
+app.use((err:any, req:Request, res:Response, next: NextFunction) => {
   res.status(err.statusCode || 500).json({ error: err.message });
 });
 
