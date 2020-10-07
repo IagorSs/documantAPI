@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 // eslint-disable-next-line no-unused-vars
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import User from './UsersControllers';
 import auth from '../config/auth';
@@ -23,7 +23,7 @@ class Login {
     }
   }
 
-  static async login(req:Request, res:Response) {
+  static async login(req:Request, res:Response, next: NextFunction) {
     const { email, password } = req.body;
 
     try {
@@ -48,7 +48,7 @@ class Login {
         message: 'invalid password',
       };
     } catch (error) {
-      return res.status(error.statusCode || 500).json({ error: error.message });
+      return next(error);
     }
   }
 

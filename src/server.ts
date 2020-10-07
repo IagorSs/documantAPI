@@ -19,6 +19,10 @@ app.use(json());
 app.use(routes);
 app.use(morgan('dev'));
 
+app.use((err, req, res, next) => {
+  res.status(err.statusCode || 500).json({ error: err.message });
+});
+
 const port = process.env.LOCAL_PORT || 3002;
 
 app.listen(port, () => {
