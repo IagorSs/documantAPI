@@ -8,7 +8,7 @@ class TokenController {
     return new AWS.DocumentClient();
   }
 
-  static async insertToken(tokens:{tokenId:string, refreshToken:string}) {
+  static async insertToken(tokens:{tokenID:string, refreshToken:string}) {
     const params = {
       TableName: TokenController.TableName,
       Item: tokens,
@@ -39,7 +39,7 @@ class TokenController {
 
     const data = await docClient.delete({
       TableName: 'tokens',
-      Key: { tokenId: token },
+      Key: { tokenID: token },
     }).promise();
 
     return data;
