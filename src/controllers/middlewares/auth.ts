@@ -25,7 +25,7 @@ async function authenticate(req:Request, res:Response, next:NextFunction) {
           };
         }
 
-        req.body.email = email;
+        req.body.email = email.email; // não sei resolver esse problema
 
         resolve();
       });
