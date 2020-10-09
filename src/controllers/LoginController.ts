@@ -34,7 +34,7 @@ class Login {
       if (match) {
         Login.checkSecretJWTEnv();
 
-        const accessToken = jwt.sign(email, auth.secret); // { expiresIn: auth.expire });
+        const accessToken = jwt.sign({ email }, auth.secret, { expiresIn: auth.expire });
 
         // const refreshToken = jwt.sign(email, auth.refreshSecret);
 
