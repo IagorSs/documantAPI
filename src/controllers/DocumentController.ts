@@ -1,7 +1,7 @@
 import AWS from 'aws-sdk/clients/dynamodb';
 import crypto from 'crypto';
 // eslint-disable-next-line no-unused-vars
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import UsersController from './UsersControllers';
 
 export default class DocumentController {
@@ -54,7 +54,7 @@ export default class DocumentController {
     }
   }
 
-  static async create(req:Request, res:Response) {
+  static async create(req:Request, res:Response, next:NextFunction) {
     try {
       DocumentController.checkDocumentEnv();
 
@@ -100,7 +100,7 @@ export default class DocumentController {
         owner: true,
       };
 
-      await UsersController.addItem(req, res);
+      await UsersController.addItem(req, res, next);
 
       return res.sendStatus(200);
     } catch (error) {
