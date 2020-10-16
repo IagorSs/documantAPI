@@ -31,13 +31,14 @@ export default class UsersController {
       Key: { emailID: email },
     }).promise();
 
-    if (!data.Item) {
-      throw {
-        statusCode: 500,
-        message: 'User not found',
-      };
+    if (data.Item) {
+      return data.Item;
     }
-    return data.Item;
+
+    throw {
+      statusCode: 500,
+      message: 'User not found',
+    };
   }
 
   static async create(req:Request, res:Response, next: NextFunction) {
@@ -61,38 +62,38 @@ export default class UsersController {
         }, (err, data) => resolve(data.Item != null));
       });
 
-      if (await alreadyExistUserPromise) {
-        throw {
-          statusCode: 500,
-          message: 'Trying to create an user that already exists',
+      if (!await alreadyExistUserPromise) {
+        const hashedPassword = await bcrypt.hash(pass, 10);
+        const input = {
+          state: {
+            createdOn: new Date().toString(),
+            updatedOn: new Date().toString(),
+            isDeleted: false,
+          },
+          name,
+          emailID: email,
+          companyName,
+          CPF,
+          password: hashedPassword,
+          myTodoTemplates: [],
+          myDocuments: [],
+          todoTemplates: [],
+          documents: [],
         };
+
+        const params = {
+          TableName: UsersController.TableName,
+          Item: input,
+        };
+
+        const data = await docClient.put(params).promise();
+        return res.status(200).json(data);
       }
 
-      const hashedPassword = await bcrypt.hash(pass, 10);
-      const input = {
-        state: {
-          createdOn: new Date().toString(),
-          updatedOn: new Date().toString(),
-          isDeleted: false,
-        },
-        name,
-        emailID: email,
-        companyName,
-        CPF,
-        password: hashedPassword,
-        myTodoTemplates: [],
-        myDocuments: [],
-        todoTemplates: [],
-        documents: [],
+      throw {
+        statusCode: 500,
+        message: 'Trying to create an user that already exists',
       };
-
-      const params = {
-        TableName: UsersController.TableName,
-        Item: input,
-      };
-
-      const data = await docClient.put(params).promise();
-      return res.status(200).json(data);
     } catch (error) {
       return next(error);
     }
@@ -114,40 +115,40 @@ export default class UsersController {
     try {
       const { email, key, value } = req.body;
 
-      if (!email) {
-        throw {
-          statusCode: 401,
-          message: 'there is no user logged in',
-        };
-      }
+      if (email) {
+        UsersController.checkUserEnv();
 
-      UsersController.checkUserEnv();
+        const dataItem = await UsersController.getItem(email);
 
-      const dataItem = await UsersController.getItem(email);
-
-      const params = {
-        TableName: UsersController.TableName,
-        Key: { emailID: email },
-        AttributeUpdates: {
-          state: {
-            Action: 'PUT',
-            Value: {
-              ...dataItem.state,
-              updatedOn: new Date().toString(),
+        const params = {
+          TableName: UsersController.TableName,
+          Key: { emailID: email },
+          AttributeUpdates: {
+            state: {
+              Action: 'PUT',
+              Value: {
+                ...dataItem.state,
+                updatedOn: new Date().toString(),
+              },
+            },
+            [key]: {
+              Action: 'PUT',
+              Value: value,
             },
           },
-          [key]: {
-            Action: 'PUT',
-            Value: value,
-          },
-        },
+        };
+
+        const docClient = await UsersController.getClient();
+
+        const data = await docClient.update(params).promise();
+
+        return res.status(200).json(data);
+      }
+
+      throw {
+        statusCode: 401,
+        message: 'there is no user logged in',
       };
-
-      const docClient = await UsersController.getClient();
-
-      const data = await docClient.update(params).promise();
-
-      return res.status(200).json(data);
     } catch (error) {
       return next(error);
     }
@@ -229,41 +230,41 @@ export default class UsersController {
       if (type === 'document') key = owner ? 'myDocuments' : 'documents';
       else if (type === 'todo') key = owner ? 'myTodoTemplates' : 'todoTemplates';
 
-      if (!key) {
-        throw {
-          statusCode: 500,
-          message: 'Invalid type of Item',
-        };
-      }
+      if (key) {
+        const Value = owner ? [...dataItem[key], itemID] : [...dataItem[key], {
+          isDone: false,
+          itemID,
+        }];
 
-      const Value = owner ? [...dataItem[key], itemID] : [...dataItem[key], {
-        isDone: false,
-        itemID,
-      }];
-
-      const params = {
-        TableName: UsersController.TableName,
-        Key: { emailID: email },
-        AttributeUpdates: {
-          state: {
-            Action: 'PUT',
-            Value: {
-              ...dataItem.state,
-              updatedOn: new Date().toString(),
+        const params = {
+          TableName: UsersController.TableName,
+          Key: { emailID: email },
+          AttributeUpdates: {
+            state: {
+              Action: 'PUT',
+              Value: {
+                ...dataItem.state,
+                updatedOn: new Date().toString(),
+              },
+            },
+            [key]: {
+              Action: 'PUT',
+              Value,
             },
           },
-          [key]: {
-            Action: 'PUT',
-            Value,
-          },
-        },
+        };
+
+        const docClient = await UsersController.getClient();
+
+        await docClient.update(params).promise();
+
+        return res.sendStatus(200);
+      }
+
+      throw {
+        statusCode: 500,
+        message: 'Invalid type of Item',
       };
-
-      const docClient = await UsersController.getClient();
-
-      await docClient.update(params).promise();
-
-      return res.sendStatus(200);
     } catch (error) {
       return next(error);
     }
@@ -286,47 +287,47 @@ export default class UsersController {
       if (type === 'document') key = 'documents';
       else if (type === 'todo') key = 'todoTemplates';
 
-      if (!key) {
-        throw {
-          statusCode: 500,
-          message: 'Invalid type of Item',
-        };
-      }
+      if (key) {
+        changeItems.map((item:{
+          itemIndex: number,
+          isDone: boolean
+        }) => {
+          dataItem[key][item.itemIndex] = {
+            ...dataItem[key][item.itemIndex],
+            isDone: item.isDone,
+          };
+          return null;
+        });
 
-      changeItems.map((item:{
-        itemIndex: number,
-        isDone: boolean
-      }) => {
-        dataItem[key][item.itemIndex] = {
-          ...dataItem[key][item.itemIndex],
-          isDone: item.isDone,
-        };
-        return null;
-      });
-
-      const params = {
-        TableName: UsersController.TableName,
-        Key: { emailID: email },
-        AttributeUpdates: {
-          state: {
-            Action: 'PUT',
-            Value: {
-              ...dataItem.state,
-              updatedOn: new Date().toString(),
+        const params = {
+          TableName: UsersController.TableName,
+          Key: { emailID: email },
+          AttributeUpdates: {
+            state: {
+              Action: 'PUT',
+              Value: {
+                ...dataItem.state,
+                updatedOn: new Date().toString(),
+              },
+            },
+            [key]: {
+              Action: 'PUT',
+              Value: dataItem[key],
             },
           },
-          [key]: {
-            Action: 'PUT',
-            Value: dataItem[key],
-          },
-        },
+        };
+
+        const docClient = await UsersController.getClient();
+
+        await docClient.update(params).promise();
+
+        return res.sendStatus(200);
+      }
+
+      throw {
+        statusCode: 500,
+        message: 'Invalid type of Item',
       };
-
-      const docClient = await UsersController.getClient();
-
-      await docClient.update(params).promise();
-
-      return res.sendStatus(200);
     } catch (error) {
       return next(error);
     }
