@@ -41,14 +41,14 @@ export default class DocumentController {
     try {
       const data = await DocumentController.getItem(req.body.title);
 
-      if (!data) {
-        throw {
-          statusCode: 500,
-          message: 'Item not found',
-        };
+      if (data) {
+        return res.status(200).json(data);
       }
 
-      return res.status(200).json(data);
+      throw {
+        statusCode: 500,
+        message: 'Item not found',
+      };
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }
@@ -116,36 +116,36 @@ export default class DocumentController {
 
       const dataItem = await DocumentController.getItem(titleID);
 
-      if (!dataItem) {
-        throw {
-          statusCode: 500,
-          message: 'Item not found',
-        };
-      }
-
-      const params = {
-        TableName: DocumentController.TableName,
-        Key: { titleID },
-        AttributeUpdates: {
-          state: {
-            Action: 'PUT',
-            Value: {
-              ...dataItem.state,
-              updatedOn: new Date().toString(),
+      if (dataItem) {
+        const params = {
+          TableName: DocumentController.TableName,
+          Key: { titleID },
+          AttributeUpdates: {
+            state: {
+              Action: 'PUT',
+              Value: {
+                ...dataItem.state,
+                updatedOn: new Date().toString(),
+              },
+            },
+            [key]: {
+              Action: 'PUT',
+              Value: value,
             },
           },
-          [key]: {
-            Action: 'PUT',
-            Value: value,
-          },
-        },
+        };
+
+        const docClient = await DocumentController.getClient();
+
+        const data = await docClient.update(params).promise();
+
+        return res.status(200).json(data);
+      }
+
+      throw {
+        statusCode: 500,
+        message: 'Item not found',
       };
-
-      const docClient = await DocumentController.getClient();
-
-      const data = await docClient.update(params).promise();
-
-      return res.status(200).json(data);
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }
@@ -157,36 +157,36 @@ export default class DocumentController {
 
       const dataItem = await DocumentController.getItem(titleID);
 
-      if (!dataItem) {
-        throw {
-          statusCode: 500,
-          message: 'Item not found',
-        };
-      }
-
-      const params = {
-        TableName: DocumentController.TableName,
-        Key: { titleID },
-        AttributeUpdates: {
-          state: {
-            Action: 'PUT',
-            Value: {
-              ...dataItem.state,
-              updatedOn: new Date().toString(),
+      if (dataItem) {
+        const params = {
+          TableName: DocumentController.TableName,
+          Key: { titleID },
+          AttributeUpdates: {
+            state: {
+              Action: 'PUT',
+              Value: {
+                ...dataItem.state,
+                updatedOn: new Date().toString(),
+              },
+            },
+            isPublic: {
+              Action: 'PUT',
+              Value: true,
             },
           },
-          isPublic: {
-            Action: 'PUT',
-            Value: true,
-          },
-        },
+        };
+
+        const docClient = await DocumentController.getClient();
+
+        const data = await docClient.update(params).promise();
+
+        return res.status(200).json(data);
+      }
+
+      throw {
+        statusCode: 500,
+        message: 'Item not found',
       };
-
-      const docClient = await DocumentController.getClient();
-
-      const data = await docClient.update(params).promise();
-
-      return res.status(200).json(data);
     } catch (error) {
       return res.status(error.statusCode || 500).json({ error: error.message });
     }
