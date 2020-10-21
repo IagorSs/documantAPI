@@ -1,27 +1,33 @@
-import express from 'express';
-import UsersController from './controllers/usersController';
-import filesController, {} from './controllers/filesController';
-import Config from './config';
+/* eslint-disable import/first */
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+import express, {
+  json, Request, Response, NextFunction,
+} from 'express';
+import morgan from 'morgan';
+import cors from 'cors';
+import AWSConfig from './config/AWS';
+import corsOptions from './config/cors';
+import routes from './routes';
 
 const app = express();
-const routes = express.Router();
 
-Config.index();
+AWSConfig();
 
-app.use(express.json());
+app.use(cors(corsOptions));
+app.use(json());
 app.use(routes);
+app.use(morgan('dev'));
 
-routes
-  .get('/users', UsersController.find)
-  .post('/users', UsersController.create)
-  .put('/users', UsersController.update)
-  .delete('/users', UsersController.delete)
+app.use((err:any, req:Request, res:Response, next: NextFunction) => {
+  res.status(err.statusCode || 500).json({ error: err.message });
+});
 
-  .get('/files', filesController.getFile)
+const port = process.env.LOCAL_PORT || 3002;
 
-  .get('/exampleTeste', filesController.getExampleFE);
-
-app.listen(8000, () => {
+app.listen(port, () => {
   // eslint-disable-next-line no-console
-  console.log('server running');
+  console.log(`Server is running on port - ${port}`);
 });
