@@ -4,13 +4,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express, {
-  json, Request, Response, NextFunction,
+  json,
 } from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import AWSConfig from './config/AWS';
 import corsOptions from './config/cors';
 import routes from './routes';
+import errorHandler from './errors/handler';
 
 const app = express();
 
@@ -21,9 +22,7 @@ app.use(json());
 app.use(routes);
 app.use(morgan('dev'));
 
-app.use((err:any, req:Request, res:Response, next: NextFunction) => {
-  res.status(err.statusCode || 500).json({ error: err.message });
-});
+app.use(errorHandler);
 
 const port = process.env.LOCAL_PORT || 3002;
 
