@@ -90,8 +90,6 @@ export default class UsersController {
       return res.status(200).json(data);
     }
 
-    console.log("TESTE: ", InternalError.constructor);
-
     next(new InternalError('Trying to create an user that already exists', 500));
   }
 
