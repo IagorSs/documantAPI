@@ -4,6 +4,7 @@ import { NextFunction, Request, Response } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
 import IExternDocument, {} from '../interfaces/DynamoDB/IExternDocument';
+import InternalError from '../errors/InternalError';
 
 export default class UsersController {
   static readonly TableName = process.env.USER_TABLE_NAME || ''
@@ -42,61 +43,56 @@ export default class UsersController {
   }
 
   static async create(req:Request, res:Response, next: NextFunction) {
-    try {
-      UsersController.checkUserEnv();
+    UsersController.checkUserEnv();
 
-      const docClient = await UsersController.getClient();
+    const docClient = await UsersController.getClient();
 
-      const {
+    const {
+      name,
+      email,
+      companyName,
+      CPF,
+      pass,
+    } = req.body;
+
+    const alreadyExistUserPromise = new Promise<boolean>((resolve) => {
+      docClient.get({
+        TableName: UsersController.TableName,
+        Key: { emailID: email },
+      }, (err, data) => resolve(data.Item != null));
+    });
+
+    if (!await alreadyExistUserPromise) {
+      const hashedPassword = await bcrypt.hash(pass, 10);
+      const input = {
+        state: {
+          createdOn: new Date().toString(),
+          updatedOn: new Date().toString(),
+          isDeleted: false,
+        },
         name,
-        email,
+        emailID: email,
         companyName,
         CPF,
-        pass,
-      } = req.body;
-
-      const alreadyExistUserPromise = new Promise<boolean>((resolve) => {
-        docClient.get({
-          TableName: UsersController.TableName,
-          Key: { emailID: email },
-        }, (err, data) => resolve(data.Item != null));
-      });
-
-      if (!await alreadyExistUserPromise) {
-        const hashedPassword = await bcrypt.hash(pass, 10);
-        const input = {
-          state: {
-            createdOn: new Date().toString(),
-            updatedOn: new Date().toString(),
-            isDeleted: false,
-          },
-          name,
-          emailID: email,
-          companyName,
-          CPF,
-          password: hashedPassword,
-          myTodoTemplates: [],
-          myDocuments: [],
-          todoTemplates: [],
-          documents: [],
-        };
-
-        const params = {
-          TableName: UsersController.TableName,
-          Item: input,
-        };
-
-        const data = await docClient.put(params).promise();
-        return res.status(200).json(data);
-      }
-
-      throw {
-        statusCode: 500,
-        message: 'Trying to create an user that already exists',
+        password: hashedPassword,
+        myTodoTemplates: [],
+        myDocuments: [],
+        todoTemplates: [],
+        documents: [],
       };
-    } catch (error) {
-      return next(error);
+
+      const params = {
+        TableName: UsersController.TableName,
+        Item: input,
+      };
+
+      const data = await docClient.put(params).promise();
+      return res.status(200).json(data);
     }
+
+    console.log("TESTE: ", InternalError.constructor);
+
+    next(new InternalError('Trying to create an user that already exists', 500));
   }
 
   static async find(req:Request, res:Response, next: NextFunction) {

@@ -1,7 +1,7 @@
 import AWS from 'aws-sdk';
 
 export default function Config() {
-  if (process.env.AWS_ACESS_KEY === '') { throw new Error('Variáveis de ambiente não estão configuradas'); }
+  if (process.env.AWS_ACESS_KEY === '') { throw new Error('Variáveis de acesso da AWS não estão configuradas'); }
 
   AWS.config.credentials = {
     accessKeyId: process.env.AWS_ACESS_KEY || '',

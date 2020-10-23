@@ -4,30 +4,31 @@ import crypto from 'crypto';
 import { NextFunction, Request, Response } from 'express';
 import UsersController from './UsersControllers';
 
-export default class DocumentController {
-  static readonly TableName = process.env.DOCUMENT_TABLE_NAME || ''
+const TableName = process.env.DOCUMENT_TABLE_NAME || '';
 
-  static async getClient() {
+export default {
+
+  async getClient() {
     return new AWS.DocumentClient();
-  }
+  },
 
-  static checkDocumentEnv() {
+  checkDocumentEnv() {
     if (!process.env.DOCUMENT_TABLE_NAME) {
       throw {
         statusCode: 500,
         message: 'User table not setted',
       };
     }
-  }
+  },
 
-  static async getItem(titleID:string) {
-    DocumentController.checkDocumentEnv();
+  async getItem(titleID:string) {
+    this.checkDocumentEnv();
 
-    const docClient = await DocumentController.getClient();
+    const docClient = await this.getClient();
 
     try {
       const data = await docClient.get({
-        TableName: DocumentController.TableName,
+        TableName,
         Key: { titleID },
       }).promise();
 
@@ -35,11 +36,11 @@ export default class DocumentController {
     } catch (error) {
       return {};
     }
-  }
+  },
 
-  static async find(req:Request, res:Response) {
+  async find(req:Request, res:Response) {
     try {
-      const data = await DocumentController.getItem(req.body.title);
+      const data = await this.getItem(req.body.title);
 
       if (data) {
         return res.status(200).json(data);
@@ -52,11 +53,11 @@ export default class DocumentController {
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }
-  }
+  },
 
-  static async create(req:Request, res:Response, next:NextFunction) {
+  async create(req:Request, res:Response, next:NextFunction) {
     try {
-      DocumentController.checkDocumentEnv();
+      this.checkDocumentEnv();
 
       const {
         title,
@@ -65,17 +66,17 @@ export default class DocumentController {
         S3File,
       } = req.body;
 
-      const client = await DocumentController.getClient();
+      const client = await this.getClient();
 
       let titleID:string;
 
       do {
         titleID = `${crypto.randomBytes(16).toString('hex')}-${title}`;
         // eslint-disable-next-line no-await-in-loop
-      } while (await DocumentController.getItem(titleID));
+      } while (await this.getItem(titleID));
 
       const params = {
-        TableName: DocumentController.TableName,
+        TableName,
         Item: {
           state: {
             createdOn: new Date().toString(),
@@ -106,19 +107,19 @@ export default class DocumentController {
     } catch (error) {
       return res.status(error.statusCode || 500).json({ error: error.message });
     }
-  }
+  },
 
-  static async update(req:Request, res:Response) {
+  async update(req:Request, res:Response) {
     try {
-      DocumentController.checkDocumentEnv();
+      this.checkDocumentEnv();
 
       const { titleID, key, value } = req.body;
 
-      const dataItem = await DocumentController.getItem(titleID);
+      const dataItem = await this.getItem(titleID);
 
       if (dataItem) {
         const params = {
-          TableName: DocumentController.TableName,
+          TableName,
           Key: { titleID },
           AttributeUpdates: {
             state: {
@@ -135,7 +136,7 @@ export default class DocumentController {
           },
         };
 
-        const docClient = await DocumentController.getClient();
+        const docClient = await this.getClient();
 
         const data = await docClient.update(params).promise();
 
@@ -149,17 +150,17 @@ export default class DocumentController {
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message });
     }
-  }
+  },
 
-  static async setPublic(req:Request, res:Response) {
+  async setPublic(req:Request, res:Response) {
     try {
       const { titleID } = req.body;
 
-      const dataItem = await DocumentController.getItem(titleID);
+      const dataItem = await this.getItem(titleID);
 
       if (dataItem) {
         const params = {
-          TableName: DocumentController.TableName,
+          TableName,
           Key: { titleID },
           AttributeUpdates: {
             state: {
@@ -176,7 +177,7 @@ export default class DocumentController {
           },
         };
 
-        const docClient = await DocumentController.getClient();
+        const docClient = await this.getClient();
 
         const data = await docClient.update(params).promise();
 
@@ -190,5 +191,5 @@ export default class DocumentController {
     } catch (error) {
       return res.status(error.statusCode || 500).json({ error: error.message });
     }
-  }
-}
+  },
+};
