@@ -1,10 +1,12 @@
 /* eslint-disable no-console */
 // eslint-disable-next-line no-unused-vars
-import { NextFunction, Request, Response } from 'express';
+import {
+  NextFunction, Request, Response,
+} from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
 import IExternDocument, {} from '../interfaces/DynamoDB/IExternDocument';
-import InternalError from '../errors/InternalError';
+import { InternalError } from '../utils/errors/errors';
 
 export default class UsersController {
   static readonly TableName = process.env.USER_TABLE_NAME || ''
@@ -43,6 +45,7 @@ export default class UsersController {
   }
 
   static async create(req:Request, res:Response, next: NextFunction) {
+    // try {
     UsersController.checkUserEnv();
 
     const docClient = await UsersController.getClient();
@@ -90,7 +93,11 @@ export default class UsersController {
       return res.status(200).json(data);
     }
 
-    next(new InternalError('Trying to create an user that already exists', 500));
+    next(new InternalError('Trying to create an user that already exists'));
+
+    // } catch (error) {
+    //   next(error);
+    // }
   }
 
   static async find(req:Request, res:Response, next: NextFunction) {

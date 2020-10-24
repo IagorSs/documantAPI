@@ -11,7 +11,7 @@ import cors from 'cors';
 import AWSConfig from './config/AWS';
 import corsOptions from './config/cors';
 import routes from './routes';
-import errorHandler from './errors/handler';
+import errorHandler from './utils/errors/handler';
 
 const app = express();
 
@@ -19,9 +19,9 @@ AWSConfig();
 
 app.use(cors(corsOptions));
 app.use(json());
-app.use(routes);
 app.use(morgan('dev'));
 
+app.use(routes);
 app.use(errorHandler);
 
 const port = process.env.LOCAL_PORT || 3002;
