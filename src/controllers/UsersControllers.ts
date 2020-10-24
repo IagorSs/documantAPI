@@ -5,50 +5,35 @@ import {
 } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
-import IExternDocument, {} from '../interfaces/DynamoDB/IExternDocument';
-import { InternalError } from '../utils/errors/errors';
+import { InternalServerError } from '../utils/errors/APIErrors';
 
-export default class UsersController {
-  static readonly TableName = process.env.USER_TABLE_NAME || ''
+const TableName = process.env.USER_TABLE_NAME || '';
 
-  static async getClient() {
-    return new AWS.DocumentClient();
+async function getClient() {
+  return new AWS.DocumentClient();
+}
+
+async function getItem(email:string) {
+  const docClient = await getClient();
+
+  const data = await docClient.get({
+    TableName,
+    Key: { emailID: email },
+  }).promise();
+
+  if (data.Item) {
+    return data.Item;
   }
 
-  static checkUserEnv() {
-    if (!process.env.USER_TABLE_NAME) {
-      throw {
-        statusCode: 500,
-        message: 'User table not setted',
-      };
-    }
-  }
+  throw {
+    statusCode: 500,
+    message: 'User not found',
+  };
+}
 
-  static async getItem(email:string) {
-    UsersController.checkUserEnv();
-
-    const docClient = await UsersController.getClient();
-
-    const data = await docClient.get({
-      TableName: UsersController.TableName,
-      Key: { emailID: email },
-    }).promise();
-
-    if (data.Item) {
-      return data.Item;
-    }
-
-    throw {
-      statusCode: 500,
-      message: 'User not found',
-    };
-  }
-
-  static async create(req:Request, res:Response, next: NextFunction) {
-    // try {
-    UsersController.checkUserEnv();
-
-    const docClient = await UsersController.getClient();
+async function create(req:Request, res:Response, next: NextFunction):Promise<any> {
+  try {
+    const docClient = await getClient();
 
     const {
       name,
@@ -60,7 +45,7 @@ export default class UsersController {
 
     const alreadyExistUserPromise = new Promise<boolean>((resolve) => {
       docClient.get({
-        TableName: UsersController.TableName,
+        TableName,
         Key: { emailID: email },
       }, (err, data) => resolve(data.Item != null));
     });
@@ -85,7 +70,7 @@ export default class UsersController {
       };
 
       const params = {
-        TableName: UsersController.TableName,
+        TableName,
         Item: input,
       };
 
@@ -93,103 +78,34 @@ export default class UsersController {
       return res.status(200).json(data);
     }
 
-    next(new InternalError('Trying to create an user that already exists'));
-
-    // } catch (error) {
-    //   next(error);
-    // }
+    throw new InternalServerError('Trying to create an user that already exists');
+  } catch (error) {
+    next(error);
   }
+}
 
-  static async find(req:Request, res:Response, next: NextFunction) {
-    try {
-      const dataItem = await UsersController.getItem(req.body.email);
+async function find(req:Request, res:Response, next: NextFunction) {
+  try {
+    const dataItem = await getItem(req.body.email);
 
-      delete dataItem.password;
+    delete dataItem.password;
 
-      return res.status(200).json(dataItem);
-    } catch (error) {
-      return next(error);
-    }
+    return res.status(200).json(dataItem);
+  } catch (error) {
+    console.log(error);
+    next(error);
   }
+}
 
-  static async update(req:Request, res:Response, next: NextFunction) {
-    try {
-      const { email, key, value } = req.body;
+async function update(req:Request, res:Response, next: NextFunction) {
+  try {
+    const { email, key, value } = req.body;
 
-      if (email) {
-        UsersController.checkUserEnv();
-
-        const dataItem = await UsersController.getItem(email);
-
-        const params = {
-          TableName: UsersController.TableName,
-          Key: { emailID: email },
-          AttributeUpdates: {
-            state: {
-              Action: 'PUT',
-              Value: {
-                ...dataItem.state,
-                updatedOn: new Date().toString(),
-              },
-            },
-            [key]: {
-              Action: 'PUT',
-              Value: value,
-            },
-          },
-        };
-
-        const docClient = await UsersController.getClient();
-
-        const data = await docClient.update(params).promise();
-
-        return res.status(200).json(data);
-      }
-
-      throw {
-        statusCode: 401,
-        message: 'there is no user logged in',
-      };
-    } catch (error) {
-      return next(error);
-    }
-  }
-
-  static async delete(req:Request, res:Response, next: NextFunction) {
-    try {
-      UsersController.checkUserEnv();
-
-      const {
-        email,
-      } = req.body;
-
-      const dataItem = await UsersController.getItem(email);
-
-      const client = await UsersController.getClient();
-
-      const data = await client.delete({
-        TableName: UsersController.TableName,
-        Key: { emailID: email },
-      }).promise();
-
-      return res.status(200).json(data);
-    } catch (error) {
-      return next(error);
-    }
-  }
-
-  static async fakeDelete(req:Request, res:Response, next: NextFunction) {
-    try {
-      UsersController.checkUserEnv();
-
-      const {
-        email,
-      } = req.body;
-
-      const dataItem = await UsersController.getItem(email);
+    if (email) {
+      const dataItem = await getItem(email);
 
       const params = {
-        TableName: UsersController.TableName,
+        TableName,
         Key: { emailID: email },
         AttributeUpdates: {
           state: {
@@ -197,140 +113,209 @@ export default class UsersController {
             Value: {
               ...dataItem.state,
               updatedOn: new Date().toString(),
-              isDeleted: true,
             },
+          },
+          [key]: {
+            Action: 'PUT',
+            Value: value,
           },
         },
       };
 
-      const docClient = await UsersController.getClient();
+      const docClient = await getClient();
 
       const data = await docClient.update(params).promise();
 
       return res.status(200).json(data);
-    } catch (error) {
-      return next(error);
     }
-  }
 
-  static async addItem(req:Request, res:Response, next: NextFunction) {
-    try {
-      UsersController.checkUserEnv();
-
-      const {
-        email,
-        itemID,
-        type,
-        owner,
-      } = req.body;
-
-      const dataItem = await UsersController.getItem(email);
-
-      let key;
-
-      if (type === 'document') key = owner ? 'myDocuments' : 'documents';
-      else if (type === 'todo') key = owner ? 'myTodoTemplates' : 'todoTemplates';
-
-      if (key) {
-        const Value = owner ? [...dataItem[key], itemID] : [...dataItem[key], {
-          isDone: false,
-          itemID,
-        }];
-
-        const params = {
-          TableName: UsersController.TableName,
-          Key: { emailID: email },
-          AttributeUpdates: {
-            state: {
-              Action: 'PUT',
-              Value: {
-                ...dataItem.state,
-                updatedOn: new Date().toString(),
-              },
-            },
-            [key]: {
-              Action: 'PUT',
-              Value,
-            },
-          },
-        };
-
-        const docClient = await UsersController.getClient();
-
-        await docClient.update(params).promise();
-
-        return res.sendStatus(200);
-      }
-
-      throw {
-        statusCode: 500,
-        message: 'Invalid type of Item',
-      };
-    } catch (error) {
-      return next(error);
-    }
-  }
-
-  static async setDoneItems(req:Request, res:Response, next: NextFunction) {
-    try {
-      UsersController.checkUserEnv();
-
-      const {
-        email,
-        changeItems,
-        type,
-      } = req.body;
-
-      const dataItem = await UsersController.getItem(email);
-
-      let key:string = '';
-
-      if (type === 'document') key = 'documents';
-      else if (type === 'todo') key = 'todoTemplates';
-
-      if (key) {
-        changeItems.map((item:{
-          itemIndex: number,
-          isDone: boolean
-        }) => {
-          dataItem[key][item.itemIndex] = {
-            ...dataItem[key][item.itemIndex],
-            isDone: item.isDone,
-          };
-          return null;
-        });
-
-        const params = {
-          TableName: UsersController.TableName,
-          Key: { emailID: email },
-          AttributeUpdates: {
-            state: {
-              Action: 'PUT',
-              Value: {
-                ...dataItem.state,
-                updatedOn: new Date().toString(),
-              },
-            },
-            [key]: {
-              Action: 'PUT',
-              Value: dataItem[key],
-            },
-          },
-        };
-
-        const docClient = await UsersController.getClient();
-
-        await docClient.update(params).promise();
-
-        return res.sendStatus(200);
-      }
-
-      throw {
-        statusCode: 500,
-        message: 'Invalid type of Item',
-      };
-    } catch (error) {
-      return next(error);
-    }
+    throw {
+      statusCode: 401,
+      message: 'there is no user logged in',
+    };
+  } catch (error) {
+    return next(error);
   }
 }
+
+async function trueDelete(req:Request, res:Response, next:NextFunction) {
+  try {
+    const {
+      email,
+    } = req.body;
+
+    const dataItem = await getItem(email);
+
+    const client = await getClient();
+
+    const data = await client.delete({
+      TableName,
+      Key: { emailID: email },
+    }).promise();
+
+    return res.status(200).json(data);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function fakeDelete(req:Request, res:Response, next: NextFunction) {
+  try {
+    const {
+      email,
+    } = req.body;
+
+    const dataItem = await getItem(email);
+
+    const params = {
+      TableName,
+      Key: { emailID: email },
+      AttributeUpdates: {
+        state: {
+          Action: 'PUT',
+          Value: {
+            ...dataItem.state,
+            updatedOn: new Date().toString(),
+            isDeleted: true,
+          },
+        },
+      },
+    };
+
+    const docClient = await getClient();
+
+    const data = await docClient.update(params).promise();
+
+    return res.status(200).json(data);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function addItem(req:Request, res:Response, next: NextFunction) {
+  try {
+    const {
+      email,
+      itemID,
+      type,
+      owner,
+    } = req.body;
+
+    const dataItem = await getItem(email);
+
+    let key;
+
+    if (type === 'document') key = owner ? 'myDocuments' : 'documents';
+    else if (type === 'todo') key = owner ? 'myTodoTemplates' : 'todoTemplates';
+
+    if (key) {
+      const Value = owner ? [...dataItem[key], itemID] : [...dataItem[key], {
+        isDone: false,
+        itemID,
+      }];
+
+      const params = {
+        TableName,
+        Key: { emailID: email },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+            },
+          },
+          [key]: {
+            Action: 'PUT',
+            Value,
+          },
+        },
+      };
+
+      const docClient = await getClient();
+
+      await docClient.update(params).promise();
+
+      return res.sendStatus(200);
+    }
+
+    throw {
+      statusCode: 500,
+      message: 'Invalid type of Item',
+    };
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function setDoneItems(req:Request, res:Response, next: NextFunction) {
+  try {
+    const {
+      email,
+      changeItems,
+      type,
+    } = req.body;
+
+    const dataItem = await getItem(email);
+
+    let key:string = '';
+
+    if (type === 'document') key = 'documents';
+    else if (type === 'todo') key = 'todoTemplates';
+
+    if (key) {
+      changeItems.map((item:{
+        itemIndex: number,
+        isDone: boolean
+      }) => {
+        dataItem[key][item.itemIndex] = {
+          ...dataItem[key][item.itemIndex],
+          isDone: item.isDone,
+        };
+        return null;
+      });
+
+      const params = {
+        TableName,
+        Key: { emailID: email },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+            },
+          },
+          [key]: {
+            Action: 'PUT',
+            Value: dataItem[key],
+          },
+        },
+      };
+
+      const docClient = await getClient();
+
+      await docClient.update(params).promise();
+
+      return res.sendStatus(200);
+    }
+
+    throw {
+      statusCode: 500,
+      message: 'Invalid type of Item',
+    };
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export default {
+  getItem,
+  create,
+  find,
+  update,
+  trueDelete,
+  fakeDelete,
+  addItem,
+  setDoneItems,
+};

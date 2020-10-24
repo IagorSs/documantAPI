@@ -11,15 +11,18 @@ import cors from 'cors';
 import AWSConfig from './config/AWS';
 import corsOptions from './config/cors';
 import routes from './routes';
-import errorHandler from './utils/errors/handler';
+import errorHandler from './utils/errors/errorHandler';
+import checkENV from './utils/checkENV';
 
 const app = express();
 
+app.use(json());
+app.use(morgan('dev'));
+
+checkENV();
 AWSConfig();
 
 app.use(cors(corsOptions));
-app.use(json());
-app.use(morgan('dev'));
 
 app.use(routes);
 app.use(errorHandler);

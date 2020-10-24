@@ -6,190 +6,180 @@ import UsersController from './UsersControllers';
 
 const TableName = process.env.DOCUMENT_TABLE_NAME || '';
 
-export default {
+async function getClient() {
+  return new AWS.DocumentClient();
+}
 
-  async getClient() {
-    return new AWS.DocumentClient();
-  },
+async function getItem(titleID:string) {
+  const docClient = await getClient();
 
-  checkDocumentEnv() {
-    if (!process.env.DOCUMENT_TABLE_NAME) {
-      throw {
-        statusCode: 500,
-        message: 'User table not setted',
-      };
+  try {
+    const data = await docClient.get({
+      TableName,
+      Key: { titleID },
+    }).promise();
+
+    return data.Item;
+  } catch (error) {
+    return {};
+  }
+}
+
+async function find(req:Request, res:Response) {
+  try {
+    const data = await getItem(req.body.title);
+
+    if (data) {
+      return res.status(200).json(data);
     }
-  },
 
-  async getItem(titleID:string) {
-    this.checkDocumentEnv();
+    throw {
+      statusCode: 500,
+      message: 'Item not found',
+    };
+  } catch (error) {
+    return res.status(error.statusCode).json({ error: error.message });
+  }
+}
 
-    const docClient = await this.getClient();
+async function create(req:Request, res:Response, next:NextFunction) {
+  try {
+    const {
+      title,
+      description,
+      email,
+      S3File,
+    } = req.body;
 
-    try {
-      const data = await docClient.get({
-        TableName,
-        Key: { titleID },
-      }).promise();
+    const client = await getClient();
 
-      return data.Item;
-    } catch (error) {
-      return {};
-    }
-  },
+    let titleID:string;
 
-  async find(req:Request, res:Response) {
-    try {
-      const data = await this.getItem(req.body.title);
+    do {
+      titleID = `${crypto.randomBytes(16).toString('hex')}-${title}`;
+      // eslint-disable-next-line no-await-in-loop
+    } while (await getItem(titleID));
 
-      if (data) {
-        return res.status(200).json(data);
-      }
-
-      throw {
-        statusCode: 500,
-        message: 'Item not found',
-      };
-    } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-  },
-
-  async create(req:Request, res:Response, next:NextFunction) {
-    try {
-      this.checkDocumentEnv();
-
-      const {
+    const params = {
+      TableName,
+      Item: {
+        state: {
+          createdOn: new Date().toString(),
+          updatedOn: new Date().toString(),
+          isDeleted: false,
+        },
+        isPublic: false,
+        titleID,
         title,
         description,
-        email,
+        userCreator: email,
         S3File,
-      } = req.body;
+      },
+    };
 
-      const client = await this.getClient();
+    await client.put(params).promise();
 
-      let titleID:string;
+    req.body = {
+      email,
+      itemID: titleID,
+      type: 'document',
+      owner: true,
+    };
 
-      do {
-        titleID = `${crypto.randomBytes(16).toString('hex')}-${title}`;
-        // eslint-disable-next-line no-await-in-loop
-      } while (await this.getItem(titleID));
+    await UsersController.addItem(req, res, next);
 
+    return res.sendStatus(200);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ error: error.message });
+  }
+}
+
+async function update(req:Request, res:Response) {
+  try {
+    const { titleID, key, value } = req.body;
+
+    const dataItem = await getItem(titleID);
+
+    if (dataItem) {
       const params = {
         TableName,
-        Item: {
+        Key: { titleID },
+        AttributeUpdates: {
           state: {
-            createdOn: new Date().toString(),
-            updatedOn: new Date().toString(),
-            isDeleted: false,
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
+            },
           },
-          isPublic: false,
-          titleID,
-          title,
-          description,
-          userCreator: email,
-          S3File,
+          [key]: {
+            Action: 'PUT',
+            Value: value,
+          },
         },
       };
 
-      await client.put(params).promise();
+      const docClient = await getClient();
 
-      req.body = {
-        email,
-        itemID: titleID,
-        type: 'document',
-        owner: true,
-      };
+      const data = await docClient.update(params).promise();
 
-      await UsersController.addItem(req, res, next);
-
-      return res.sendStatus(200);
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({ error: error.message });
+      return res.status(200).json(data);
     }
-  },
 
-  async update(req:Request, res:Response) {
-    try {
-      this.checkDocumentEnv();
+    throw {
+      statusCode: 500,
+      message: 'Item not found',
+    };
+  } catch (error) {
+    return res.status(error.statusCode).json({ error: error.message });
+  }
+}
 
-      const { titleID, key, value } = req.body;
+async function setPublic(req:Request, res:Response) {
+  try {
+    const { titleID } = req.body;
 
-      const dataItem = await this.getItem(titleID);
+    const dataItem = await getItem(titleID);
 
-      if (dataItem) {
-        const params = {
-          TableName,
-          Key: { titleID },
-          AttributeUpdates: {
-            state: {
-              Action: 'PUT',
-              Value: {
-                ...dataItem.state,
-                updatedOn: new Date().toString(),
-              },
-            },
-            [key]: {
-              Action: 'PUT',
-              Value: value,
+    if (dataItem) {
+      const params = {
+        TableName,
+        Key: { titleID },
+        AttributeUpdates: {
+          state: {
+            Action: 'PUT',
+            Value: {
+              ...dataItem.state,
+              updatedOn: new Date().toString(),
             },
           },
-        };
-
-        const docClient = await this.getClient();
-
-        const data = await docClient.update(params).promise();
-
-        return res.status(200).json(data);
-      }
-
-      throw {
-        statusCode: 500,
-        message: 'Item not found',
-      };
-    } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-  },
-
-  async setPublic(req:Request, res:Response) {
-    try {
-      const { titleID } = req.body;
-
-      const dataItem = await this.getItem(titleID);
-
-      if (dataItem) {
-        const params = {
-          TableName,
-          Key: { titleID },
-          AttributeUpdates: {
-            state: {
-              Action: 'PUT',
-              Value: {
-                ...dataItem.state,
-                updatedOn: new Date().toString(),
-              },
-            },
-            isPublic: {
-              Action: 'PUT',
-              Value: true,
-            },
+          isPublic: {
+            Action: 'PUT',
+            Value: true,
           },
-        };
-
-        const docClient = await this.getClient();
-
-        const data = await docClient.update(params).promise();
-
-        return res.status(200).json(data);
-      }
-
-      throw {
-        statusCode: 500,
-        message: 'Item not found',
+        },
       };
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({ error: error.message });
+
+      const docClient = await getClient();
+
+      const data = await docClient.update(params).promise();
+
+      return res.status(200).json(data);
     }
-  },
+
+    throw {
+      statusCode: 500,
+      message: 'Item not found',
+    };
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ error: error.message });
+  }
+}
+
+export default {
+  getItem,
+  find,
+  create,
+  update,
+  setPublic,
 };

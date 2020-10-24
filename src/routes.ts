@@ -6,6 +6,7 @@ import LoginController from './controllers/LoginController';
 import MultConfig from './config/multer';
 import DocumentController from './controllers/DocumentController';
 import authenticate from './controllers/middlewares/auth';
+import { NotFoundError } from './utils/errors/APIErrors';
 
 const routes = Router();
 
@@ -15,7 +16,7 @@ routes
   .put('/users', authenticate, UsersController.update)
   .put('/users/item', authenticate, UsersController.addItem)
   .put('/users/done', authenticate, UsersController.setDoneItems)
-  .delete('/users', authenticate, UsersController.delete)
+  .delete('/users', authenticate, UsersController.trueDelete)
   .delete('/users/fake', authenticate, UsersController.fakeDelete)
 
   .get('/document', authenticate, DocumentController.find)
@@ -28,9 +29,11 @@ routes
 
   .get('/files', authenticate, FilesController.find)
   .post('/files', authenticate, multer(MultConfig).single('file'), FilesController.create)
-  .delete('/files', authenticate, FilesController.delete)
+  .delete('/files', authenticate, FilesController.trueDelete)
 
   // Get all wrong routes
-  .all('*', (req, res) => res.status(404).json({ error: 'Route not found' }));
+  .all('*', (req, res, next) => {
+    next(new NotFoundError());
+  });
 
 export default routes;
