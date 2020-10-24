@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import AWS from 'aws-sdk/clients/dynamodb';
+import { InternalServerError } from '../utils/errors/APIErrors';
 
 const TableName = process.env.TOKEN_TABLE_NAME || '';
 
@@ -17,16 +18,12 @@ async function insertToken(tokens:{tokenID:string, refreshToken:string}) {
 
   const returningObgPromise = new Promise<Object>((resolve) => {
     docClient.put(params, (err, data) => {
-      if (err) {
-        throw {
-          statusCode: 500,
-          message: `erro ao inserir o token - ${err.message}`,
-        };
+      if (!err) {
+        resolve({ data });
+
+        return data;
       }
-
-      resolve({ data });
-
-      return data;
+      throw new InternalServerError(`Erro ao inserir o token - ${err.message}`);
     });
   });
 
@@ -37,7 +34,7 @@ async function deleteToken(token:string) {
   const docClient = await getClient();
 
   const data = await docClient.delete({
-    TableName: 'tokens',
+    TableName,
     Key: { tokenID: token },
   }).promise();
 

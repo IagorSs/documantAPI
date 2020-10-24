@@ -17,7 +17,7 @@ export class BadRequestError extends APIError {
 
 export class UnauthenticatedError extends APIError {
   constructor(message?:string) {
-    super(message || "Client Error - User not Authenticated", errorCodes.UNAUTHENTICATED);
+    super(message || "Client Error - User is not Authenticated", errorCodes.UNAUTHENTICATED);
   }
 }
 

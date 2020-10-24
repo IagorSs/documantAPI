@@ -3,6 +3,7 @@ export const informationCodes = {
 };
 
 export const successfulCodes = {
+  // For DELETE request
   OK: 200,
 
   // For POST request
@@ -28,7 +29,6 @@ export const serverErrorCodes = {
   BAD_GATEWAY: 502,
   SERVICE_UNAVAILABLE: 503,
   GATEWAY_TIMEOUT: 504,
-
 };
 
 export const errorCodes = {

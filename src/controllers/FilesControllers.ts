@@ -1,6 +1,8 @@
 import AWS_S3 from 'aws-sdk/clients/s3';
 // eslint-disable-next-line no-unused-vars
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { successfulCodes } from '../utils/httpCodes';
+import {} from '../utils/errors/APIErrors';
 
 const BucketName = process.env.DOCUMANT_BUCKET_NAME || '';
 
@@ -18,10 +20,10 @@ async function create(req:Request, res:Response) {
     size: File.size,
   };
 
-  return res.status(200).json(S3return);
+  return res.status(successfulCodes.CREATED).json(S3return);
 }
 
-async function find(req:Request, res:Response) {
+async function find(req:Request, res:Response, next:NextFunction) {
   try {
     const s3 = await getClient();
 
@@ -36,13 +38,13 @@ async function find(req:Request, res:Response) {
       Expires: 60,
     });
 
-    return res.status(200).json({ tempPreviewURL: storageFile });
+    return res.status(successfulCodes.IM_USED).json({ tempPreviewURL: storageFile });
   } catch (error) {
-    return res.status(error.statusCode).json({ error: error.code });
+    next(error);
   }
 }
 
-async function trueDelete(req:Request, res:Response) {
+async function trueDelete(req:Request, res:Response, next:NextFunction) {
   try {
     const s3 = await getClient();
 
@@ -55,9 +57,9 @@ async function trueDelete(req:Request, res:Response) {
       Key: key,
     }).promise();
 
-    return res.sendStatus(200);
+    return res.sendStatus(successfulCodes.ACCEPTED);
   } catch (error) {
-    return res.status(error.statusCode).json({ error: error.message });
+    next(error);
   }
 }
 

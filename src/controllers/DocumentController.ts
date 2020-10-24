@@ -3,6 +3,8 @@ import crypto from 'crypto';
 // eslint-disable-next-line no-unused-vars
 import { NextFunction, Request, Response } from 'express';
 import UsersController from './UsersControllers';
+import { successfulCodes } from '../utils/httpCodes';
+import { BadGatewayError } from '../utils/errors/APIErrors';
 
 const TableName = process.env.DOCUMENT_TABLE_NAME || '';
 
@@ -21,24 +23,21 @@ async function getItem(titleID:string) {
 
     return data.Item;
   } catch (error) {
-    return {};
+    return null;
   }
 }
 
-async function find(req:Request, res:Response) {
+async function find(req:Request, res:Response, next:NextFunction) {
   try {
     const data = await getItem(req.body.title);
 
     if (data) {
-      return res.status(200).json(data);
+      return res.status(successfulCodes.IM_USED).json(data);
     }
 
-    throw {
-      statusCode: 500,
-      message: 'Item not found',
-    };
+    throw new BadGatewayError("Item not found");
   } catch (error) {
-    return res.status(error.statusCode).json({ error: error.message });
+    next(error);
   }
 }
 
@@ -88,13 +87,13 @@ async function create(req:Request, res:Response, next:NextFunction) {
 
     await UsersController.addItem(req, res, next);
 
-    return res.sendStatus(200);
+    res.sendStatus(successfulCodes.CREATED);
   } catch (error) {
-    return res.status(error.statusCode || 500).json({ error: error.message });
+    next(error);
   }
 }
 
-async function update(req:Request, res:Response) {
+async function update(req:Request, res:Response, next:NextFunction) {
   try {
     const { titleID, key, value } = req.body;
 
@@ -123,19 +122,16 @@ async function update(req:Request, res:Response) {
 
       const data = await docClient.update(params).promise();
 
-      return res.status(200).json(data);
+      return res.status(successfulCodes.ACCEPTED).json(data);
     }
 
-    throw {
-      statusCode: 500,
-      message: 'Item not found',
-    };
+    throw new BadGatewayError("Item not found");
   } catch (error) {
-    return res.status(error.statusCode).json({ error: error.message });
+    next(error);
   }
 }
 
-async function setPublic(req:Request, res:Response) {
+async function setPublic(req:Request, res:Response, next:NextFunction) {
   try {
     const { titleID } = req.body;
 
@@ -164,15 +160,12 @@ async function setPublic(req:Request, res:Response) {
 
       const data = await docClient.update(params).promise();
 
-      return res.status(200).json(data);
+      return res.status(successfulCodes.ACCEPTED).json(data);
     }
 
-    throw {
-      statusCode: 500,
-      message: 'Item not found',
-    };
+    throw new BadGatewayError("Item not found");
   } catch (error) {
-    return res.status(error.statusCode || 500).json({ error: error.message });
+    next(error);
   }
 }
 

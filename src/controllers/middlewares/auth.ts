@@ -4,38 +4,29 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 import authConfig from '../../config/auth';
+import { BadRequestError, UnauthenticatedError } from '../../utils/errors/APIErrors';
 
 async function authenticate(req:Request, res:Response, next:NextFunction) {
   try {
     const token = req.headers.authorization;
 
-    if (!token) {
-      throw {
-        statusCode: 401,
-        message: `token can't be null`,
-      };
-    }
+    if (token) {
+      const jwtVerify = new Promise<void>((resolve) => {
+        jwt.verify(token, authConfig.secret, (err, email) => {
+          if (!err) {
+            req.body.email = email;
 
-    const jwtVerify = new Promise<void>((resolve) => {
-      jwt.verify(token, authConfig.secret, (err, email) => {
-        if (err) {
-          throw {
-            statusCode: 401,
-            message: err.message,
-          };
-        }
-
-        req.body.email = email.email; // não sei resolver esse problema
-
-        resolve();
+            return resolve();
+          }
+          throw new UnauthenticatedError();
+        });
       });
-    });
 
-    await jwtVerify;
-
-    next();
+      return await jwtVerify;
+    }
+    throw new BadRequestError("Token can't be null");
   } catch (err) {
-    res.status(err.statusCode).json({ error: err.message });
+    next(err);
   }
 }
 

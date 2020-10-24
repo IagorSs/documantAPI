@@ -5,6 +5,8 @@ import bcrypt from 'bcrypt';
 import User from './UsersControllers';
 import auth from '../config/auth';
 import TokenController from './TokenController';
+import { successfulCodes } from '../utils/httpCodes';
+import { BadRequestError, ForbiddenError } from '../utils/errors/APIErrors';
 
 async function login(req:Request, res:Response, next: NextFunction) {
   const { email, password } = req.body;
@@ -21,34 +23,28 @@ async function login(req:Request, res:Response, next: NextFunction) {
 
       // await TokenController.insertToken({ tokenID: accessToken, refreshToken });
 
-      return res.status(200).json({ accessToken });
+      return res.status(successfulCodes.IM_USED).json({ accessToken });
     }
 
-    throw {
-      statusCode: 401,
-      message: 'invalid password',
-    };
+    throw new ForbiddenError();
   } catch (error) {
-    return next(error);
+    next(error);
   }
 }
 
 async function logout(req:Request, res:Response, next: NextFunction) {
   try {
-    const { token } = req.body;
+    const token = req.headers.authorization;
 
-    if (!token) {
-      throw {
-        statusCode: 400,
-        message: `token can't be null`,
-      };
+    if (token) {
+      await TokenController.deleteToken(token);
+
+      res.sendStatus(successfulCodes.OK);
     }
 
-    await TokenController.deleteToken(token);
-
-    return res.sendStatus(200);
+    throw new BadRequestError("Token can't be null");
   } catch (error) {
-    return next(error);
+    next(error);
   }
 }
 

@@ -5,7 +5,8 @@ import {
 } from 'express';
 import AWS from 'aws-sdk/clients/dynamodb';
 import bcrypt from 'bcrypt';
-import { InternalServerError } from '../utils/errors/APIErrors';
+import { BadGatewayError, BadRequestError, InternalServerError } from '../utils/errors/APIErrors';
+import { successfulCodes } from '../utils/httpCodes';
 
 const TableName = process.env.USER_TABLE_NAME || '';
 
@@ -25,10 +26,7 @@ async function getItem(email:string) {
     return data.Item;
   }
 
-  throw {
-    statusCode: 500,
-    message: 'User not found',
-  };
+  throw new BadGatewayError("User not found");
 }
 
 async function create(req:Request, res:Response, next: NextFunction):Promise<any> {
@@ -90,9 +88,8 @@ async function find(req:Request, res:Response, next: NextFunction) {
 
     delete dataItem.password;
 
-    return res.status(200).json(dataItem);
+    return res.status(successfulCodes.IM_USED).json(dataItem);
   } catch (error) {
-    console.log(error);
     next(error);
   }
 }
@@ -101,40 +98,33 @@ async function update(req:Request, res:Response, next: NextFunction) {
   try {
     const { email, key, value } = req.body;
 
-    if (email) {
-      const dataItem = await getItem(email);
+    const dataItem = await getItem(email);
 
-      const params = {
-        TableName,
-        Key: { emailID: email },
-        AttributeUpdates: {
-          state: {
-            Action: 'PUT',
-            Value: {
-              ...dataItem.state,
-              updatedOn: new Date().toString(),
-            },
-          },
-          [key]: {
-            Action: 'PUT',
-            Value: value,
+    const params = {
+      TableName,
+      Key: { emailID: email },
+      AttributeUpdates: {
+        state: {
+          Action: 'PUT',
+          Value: {
+            ...dataItem.state,
+            updatedOn: new Date().toString(),
           },
         },
-      };
-
-      const docClient = await getClient();
-
-      const data = await docClient.update(params).promise();
-
-      return res.status(200).json(data);
-    }
-
-    throw {
-      statusCode: 401,
-      message: 'there is no user logged in',
+        [key]: {
+          Action: 'PUT',
+          Value: value,
+        },
+      },
     };
+
+    const docClient = await getClient();
+
+    const data = await docClient.update(params).promise();
+
+    return res.status(successfulCodes.ACCEPTED).json(data);
   } catch (error) {
-    return next(error);
+    next(error);
   }
 }
 
@@ -144,7 +134,7 @@ async function trueDelete(req:Request, res:Response, next:NextFunction) {
       email,
     } = req.body;
 
-    const dataItem = await getItem(email);
+    await getItem(email);
 
     const client = await getClient();
 
@@ -153,7 +143,7 @@ async function trueDelete(req:Request, res:Response, next:NextFunction) {
       Key: { emailID: email },
     }).promise();
 
-    return res.status(200).json(data);
+    return res.status(successfulCodes.OK).json(data);
   } catch (error) {
     return next(error);
   }
@@ -186,9 +176,9 @@ async function fakeDelete(req:Request, res:Response, next: NextFunction) {
 
     const data = await docClient.update(params).promise();
 
-    return res.status(200).json(data);
+    return res.status(successfulCodes.OK).json(data);
   } catch (error) {
-    return next(error);
+    next(error);
   }
 }
 
@@ -236,15 +226,12 @@ async function addItem(req:Request, res:Response, next: NextFunction) {
 
       await docClient.update(params).promise();
 
-      return res.sendStatus(200);
+      return res.sendStatus(successfulCodes.ACCEPTED);
     }
 
-    throw {
-      statusCode: 500,
-      message: 'Invalid type of Item',
-    };
+    throw new BadRequestError("Invalid type of Item");
   } catch (error) {
-    return next(error);
+    next(error);
   }
 }
 
@@ -297,15 +284,12 @@ async function setDoneItems(req:Request, res:Response, next: NextFunction) {
 
       await docClient.update(params).promise();
 
-      return res.sendStatus(200);
+      return res.sendStatus(successfulCodes.ACCEPTED);
     }
 
-    throw {
-      statusCode: 500,
-      message: 'Invalid type of Item',
-    };
+    throw new BadRequestError("Invalid type of Item");
   } catch (error) {
-    return next(error);
+    next(error);
   }
 }
 
