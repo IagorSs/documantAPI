@@ -14,7 +14,8 @@ export default function checkENV() {
     && acessENV.DOCUMANT_BUCKET_NAME
     && acessENV.AUTH_SECRET
     && acessENV.AUTH_REFRESH_SECRET
-    && acessENV.AUTH_EXPIRE) return;
+    && acessENV.AUTH_EXPIRE
+    && acessENV.MAX_FILE_TAM) return;
 
   console.error("Some or multiple ENV variables are not setted");
 }

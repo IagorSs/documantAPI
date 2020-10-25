@@ -27,7 +27,7 @@ app.use(cors(corsOptions));
 app.use(routes);
 app.use(errorHandler);
 
-const port = process.env.LOCAL_PORT || 3002;
+const port = parseInt(process.env.LOCAL_PORT || '3002', 10);
 
 app.listen(port, () => {
   // eslint-disable-next-line no-console

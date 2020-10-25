@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Request } from 'express';
 import multerS3 from 'multer-s3';
 import AWS from 'aws-sdk';
+import { BadRequestError } from '../utils/errors/APIErrors';
 
 export default {
   storage: multerS3({
@@ -25,15 +26,18 @@ export default {
     },
   }),
   limits: {
-    // fileSize: 1, // MAX_SIZE == 2MB
+    fileSize: parseInt(process.env.MAX_FILE_TAM || '0', 10), // MAX_SIZE == 2MB
   },
   fileFilter: (req:Request, file:Express.Multer.File, cb:FileFilterCallback) => {
     const allowedMimes = [
+      // PDF
       'application/pdf',
+
+      // DOCX
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
 
     if (allowedMimes.includes(file.mimetype)) cb(null, true);
-    else cb(new Error(`Invalid file type - ${file.mimetype}`));
+    else cb(new BadRequestError(`Invalid file type of file (${file.mimetype})`));
   },
 };

@@ -12,7 +12,7 @@ async function authenticate(req:Request, res:Response, next:NextFunction) {
 
     if (token) {
       const jwtVerify = new Promise<void>((resolve) => {
-        jwt.verify(token, authConfig.secret, (err, response) => {
+        jwt.verify(token, authConfig.secret, (err, response:any) => {
           if (!err && response) {
             req.body.email = response.email;
 
