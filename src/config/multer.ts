@@ -1,7 +1,5 @@
-// eslint-disable-next-line no-unused-vars
 import { FileFilterCallback } from 'multer';
 import crypto from 'crypto';
-// eslint-disable-next-line no-unused-vars
 import { Request } from 'express';
 import multerS3 from 'multer-s3';
 import AWS from 'aws-sdk';
@@ -9,7 +7,6 @@ import AWS from 'aws-sdk';
 export default {
   storage: multerS3({
     s3: new AWS.S3(),
-    // s3: new AWS_S3(),
     bucket: process.env.DOCUMANT_BUCKET_NAME || '',
     contentType: multerS3.DEFAULT_CONTENT_TYPE,
     acl: 'public-read',
@@ -28,7 +25,7 @@ export default {
     },
   }),
   limits: {
-    fileSize: 2 * 1024 * 1024, // MAX_SIZE == 2MB
+    // fileSize: 1, // MAX_SIZE == 2MB
   },
   fileFilter: (req:Request, file:Express.Multer.File, cb:FileFilterCallback) => {
     const allowedMimes = [

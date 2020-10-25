@@ -3,7 +3,7 @@ import { ErrorRequestHandler } from 'express';
 import APIErro, { InternalServerError } from './APIErrors';
 
 const errorHandler:ErrorRequestHandler = (error, req, res, next) => {
-  if (error instanceof AWSError) return res.status(error.statusCode).json({ error: error.message });
+  // if (error instanceof AWSError) return res.status(error.statusCode).json({ error: error.message });
 
   if (error instanceof APIErro) return res.status(error.httpCode).json({ error: error.message });
 

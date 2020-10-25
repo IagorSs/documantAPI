@@ -12,18 +12,21 @@ async function authenticate(req:Request, res:Response, next:NextFunction) {
 
     if (token) {
       const jwtVerify = new Promise<void>((resolve) => {
-        jwt.verify(token, authConfig.secret, (err, email) => {
-          if (!err) {
-            req.body.email = email;
+        jwt.verify(token, authConfig.secret, (err, response) => {
+          if (!err && response) {
+            req.body.email = response.email;
 
-            return resolve();
+            resolve();
           }
           throw new UnauthenticatedError();
         });
       });
 
+      next();
+
       return await jwtVerify;
     }
+
     throw new BadRequestError("Token can't be null");
   } catch (err) {
     next(err);

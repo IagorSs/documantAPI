@@ -29,6 +29,7 @@ routes
 
   .get('/files', authenticate, FilesController.find)
   .post('/files', authenticate, multer(MultConfig).single('file'), FilesController.create)
+  // .post('/multiple-files', authenticate, multer(MultConfig).array('file'))
   .delete('/files', authenticate, FilesController.trueDelete)
 
   // Get all wrong routes

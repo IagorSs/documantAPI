@@ -10,6 +10,17 @@ async function getClient() {
   return new AWS_S3({ signatureVersion: 'v4' });
 }
 
+async function createFileOnSave(File:Express.Multer.File) {
+  const S3return = {
+    originalName: File.originalname,
+    S3key: File.key,
+    type: File.mimetype,
+    size: File.size,
+  };
+
+  return S3return;
+}
+
 async function create(req:Request, res:Response) {
   const File:any = req.file;
 
