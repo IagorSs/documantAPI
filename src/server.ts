@@ -10,7 +10,7 @@ import morgan from 'morgan';
 import cors from 'cors';
 import AWSConfig from './config/AWS';
 import corsOptions from './config/cors';
-import routes from './routes';
+import routes from './routes/routes_0.1';
 import errorHandler from './utils/errors/errorHandler';
 import checkENV from './utils/checkENV';
 

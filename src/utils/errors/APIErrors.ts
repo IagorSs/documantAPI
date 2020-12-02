@@ -47,7 +47,7 @@ export class NotImplementedError extends APIError {
 
 export class BadGatewayError extends APIError {
   constructor(message?:string) {
-    super(`Server Error - ${message || "Cannot get necessary response from server"}`, errorCodes.BAD_REQUEST);
+    super(`Server Error - ${message || "Cannot get necessary response from server"}`, errorCodes.BAD_GATEWAY);
   }
 }
 

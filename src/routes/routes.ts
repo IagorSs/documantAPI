@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import multer from 'multer';
-import UsersController from './controllers/UsersControllers';
-import FilesController from './controllers/FilesControllers';
-import LoginController from './controllers/LoginController';
-import MultConfig from './config/multer';
-import DocumentController from './controllers/DocumentController';
-import authenticate from './controllers/middlewares/auth';
-import { NotFoundError } from './utils/errors/APIErrors';
+import UsersController from '../controllers/UsersControllers';
+import FilesController from '../controllers/FilesController';
+import LoginController from '../controllers/LoginController';
+import MultConfig from '../config/multer';
+import DocumentController from '../controllers/DocumentController';
+import authenticate from '../controllers/middlewares/auth';
+import { NotFoundError } from '../utils/errors/APIErrors';
 
 const routes = Router();
 

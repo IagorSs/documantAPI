@@ -25,8 +25,8 @@ async function create(req:Request, res:Response) {
   const File:any = req.file;
 
   const S3return = {
-    originalName: File.originalname,
-    S3key: File.key,
+    id: File.key,
+    title: File.originalname,
     type: File.mimetype,
     size: File.size,
   };
@@ -38,18 +38,23 @@ async function find(req:Request, res:Response, next:NextFunction) {
   try {
     const s3 = await getClient();
 
-    const { key } = req.body;
+    const { id } = req.params;
     const Bucket = BucketName;
 
-    await s3.headObject({ Bucket, Key: key }).promise();
+    await s3.headObject({ Bucket, Key: id }).promise();
 
     const storageFile = s3.getSignedUrl('getObject', {
       Bucket,
-      Key: key,
-      Expires: 60,
+      Key: id,
+      Expires: parseInt(process.env.FILE_EXPIRE || '', 10),
     });
 
-    return res.status(successfulCodes.IM_USED).json({ tempPreviewURL: storageFile });
+    return res
+      .status(successfulCodes.IM_USED)
+      .json({
+        tempPreviewURL: storageFile,
+        message: `Essa URL ira expirar em ${process.env.FILE_EXPIRE} segundos`,
+      });
   } catch (error) {
     next(error);
   }
@@ -60,12 +65,12 @@ async function trueDelete(req:Request, res:Response, next:NextFunction) {
     const s3 = await getClient();
 
     const {
-      key,
-    } = req.body;
+      id,
+    } = req.params;
 
     await s3.deleteObject({
       Bucket: BucketName,
-      Key: key,
+      Key: id,
     }).promise();
 
     return res.sendStatus(successfulCodes.ACCEPTED);

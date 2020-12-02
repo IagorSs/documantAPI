@@ -2,11 +2,10 @@ import AWS from 'aws-sdk/clients/dynamodb';
 import crypto from 'crypto';
 // eslint-disable-next-line no-unused-vars
 import { NextFunction, Request, Response } from 'express';
-import UsersController from './UsersControllers';
 import { successfulCodes } from '../utils/httpCodes';
 import { BadGatewayError, BadRequestError } from '../utils/errors/APIErrors';
 
-const TableName = process.env.DOCUMENT_TABLE_NAME || '';
+const TableName = process.env.TODO_TABLE_NAME || '';
 
 async function getClient() {
   return new AWS.DocumentClient();
@@ -40,7 +39,7 @@ async function create(req:Request, res:Response, next:NextFunction) {
       title,
       description,
       email,
-      file,
+      documents,
     } = req.body;
 
     const client = await getClient();
@@ -60,20 +59,11 @@ async function create(req:Request, res:Response, next:NextFunction) {
         title,
         description,
         // userCreator: email,
-        file_template: file,
+        documents: documents || [],
       },
     };
 
     await client.put(params).promise();
-
-    // req.body = {
-    //   email,
-    //   itemID: titleID,
-    //   type: 'document',
-    //   owner: true,
-    // };
-
-    // await UsersController.addItem(req, res, next);
 
     res
       .status(successfulCodes.CREATED)
@@ -120,44 +110,6 @@ async function update(req:Request, res:Response, next:NextFunction) {
   }
 }
 
-async function setPublic(req:Request, res:Response, next:NextFunction) {
-  try {
-    const { id } = req.body;
-
-    const dataItem = await getItem(id);
-
-    if (dataItem) {
-      const params = {
-        TableName,
-        Key: { id },
-        AttributeUpdates: {
-          state: {
-            Action: 'PUT',
-            Value: {
-              ...dataItem.state,
-              updatedOn: new Date().toString(),
-            },
-          },
-          isPublic: {
-            Action: 'PUT',
-            Value: true,
-          },
-        },
-      };
-
-      const docClient = await getClient();
-
-      const data = await docClient.update(params).promise();
-
-      return res.status(successfulCodes.ACCEPTED).json(data);
-    }
-
-    throw new BadGatewayError("Item not found");
-  } catch (error) {
-    next(error);
-  }
-}
-
 async function trueDelete(req:Request, res:Response, next:NextFunction) {
   try {
     const {
@@ -176,6 +128,76 @@ async function trueDelete(req:Request, res:Response, next:NextFunction) {
     return res.sendStatus(successfulCodes.OK);
   } catch (error) {
     return next(error);
+  }
+}
+
+async function addDocument(req:Request, res:Response, next:NextFunction) {
+  try {
+    const { id } = req.params;
+    const { documentID } = req.query;
+
+    const dataItem = await getItem(id);
+
+    const params = {
+      TableName,
+      Key: { id },
+      AttributeUpdates: {
+        state: {
+          Action: 'PUT',
+          Value: {
+            ...dataItem.state,
+            updated_on: new Date().toString(),
+          },
+        },
+        documents: {
+          Action: 'PUT',
+          Value: [...dataItem.documents, documentID],
+        },
+      },
+    };
+
+    const docClient = await getClient();
+
+    await docClient.update(params).promise();
+
+    return res.sendStatus(successfulCodes.ACCEPTED);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function removeDocument(req:Request, res:Response, next:NextFunction) {
+  try {
+    const { id } = req.params;
+    const { documentID } = req.query;
+
+    const dataItem = await getItem(id);
+
+    const params = {
+      TableName,
+      Key: { id },
+      AttributeUpdates: {
+        state: {
+          Action: 'PUT',
+          Value: {
+            ...dataItem.state,
+            updated_on: new Date().toString(),
+          },
+        },
+        documents: {
+          Action: 'PUT',
+          Value: dataItem.documents.filter((value:string) => value !== documentID),
+        },
+      },
+    };
+
+    const docClient = await getClient();
+
+    await docClient.update(params).promise();
+
+    return res.sendStatus(successfulCodes.ACCEPTED);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -208,7 +230,8 @@ export default {
   find,
   create,
   update,
-  setPublic,
   trueDelete,
+  addDocument,
+  removeDocument,
   allItems,
 };

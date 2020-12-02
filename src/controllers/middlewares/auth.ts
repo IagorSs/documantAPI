@@ -22,9 +22,9 @@ async function authenticate(req:Request, res:Response, next:NextFunction) {
         });
       });
 
-      next();
+      await jwtVerify;
 
-      return await jwtVerify;
+      return next();
     }
 
     throw new BadRequestError("Token can't be null");
