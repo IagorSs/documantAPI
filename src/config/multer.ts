@@ -19,7 +19,7 @@ export default {
       crypto.randomBytes(16, (err, hash) => {
         if (err) cb(err);
 
-        const fileName = `${hash.toString('hex')}-${file.originalname}`;
+        const fileName = `${hash.toString('hex')}-${file.originalname.replace(/\s+/g, '')}`;
 
         cb(null, fileName);
       });

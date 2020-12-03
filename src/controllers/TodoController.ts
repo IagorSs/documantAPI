@@ -44,7 +44,7 @@ async function create(req:Request, res:Response, next:NextFunction) {
 
     const client = await getClient();
 
-    const id = `${crypto.randomBytes(16).toString('hex')}-${title}`;
+    const id = `${crypto.randomBytes(16).toString('hex')}-${title.replace(/\s+/g, '')}`;
 
     const params = {
       TableName,
