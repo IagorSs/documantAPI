@@ -19,18 +19,18 @@ routes
   .delete('/users', authenticate, UsersController.trueDelete)
   .delete('/users/fake', authenticate, UsersController.fakeDelete)
 
-  .get('/document', authenticate, DocumentController.find)
-  .post('/document', authenticate, DocumentController.create)
-  .put('/document', authenticate, DocumentController.update)
+  .get('/document', authenticate, DocumentController.getRoute)
+  .post('/document', authenticate, DocumentController.postRoute)
+  .put('/document', authenticate, DocumentController.putRoute)
   .put('/document/public', authenticate, DocumentController.setPublic)
 
   .get('/login', LoginController.login)
   .get('/logout', LoginController.logout)
 
-  .get('/files', authenticate, FilesController.find)
-  .post('/files', authenticate, multer(MultConfig).single('file'), FilesController.create)
+  .get('/files', authenticate, FilesController.getRoute)
+  .post('/files', authenticate, multer(MultConfig).single('file'), FilesController.postRoute)
   // .post('/multiple-files', authenticate, multer(MultConfig).array('file'))
-  .delete('/files', authenticate, FilesController.trueDelete)
+  .delete('/files', authenticate, FilesController.deleteRoute)
 
   // Get all wrong routes
   .all('*', (req, res, next) => {

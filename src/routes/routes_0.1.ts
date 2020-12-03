@@ -10,27 +10,27 @@ const routes = Router();
 
 routes
   // Document methods
-  .get('/document/:id', DocumentController.find)
-  .get('/document/list/all', DocumentController.allItems)
-  .put('/document/:id', DocumentController.update)
-  .post('/document', DocumentController.create)
-  .delete('/document/:id', DocumentController.trueDelete)
+  .get('/document/:id', DocumentController.getRoute)
+  .get('/document/list/all', DocumentController.getAllItemsRoutes)
+  .put('/document/:id', DocumentController.putRoute)
+  .post('/document', DocumentController.postRoute)
+  .delete('/document/:id', DocumentController.deleteRoute)
 
   // Todo methods
-  .get('/todo/:id', TodoController.find)
-  .get('/todo/list/all', TodoController.allItems)
-  .put('/todo/:id', TodoController.update)
-  .post('/todo', TodoController.create)
-  .delete('/todo/:id', TodoController.trueDelete)
+  .get('/todo/:id', TodoController.getRoute)
+  .get('/todo/list/all', TodoController.getAllItemsRoutes)
+  .put('/todo/:id', TodoController.putRoute)
+  .post('/todo', TodoController.postRoute)
+  .delete('/todo/:id', TodoController.deleteRoute)
 
   // /todo/addDocument/{todo_id}?documentID={documentID}
-  .put('/todo/addDocument/:id', TodoController.addDocument)
-  .delete('/todo/removeDocument/:id', TodoController.removeDocument)
+  .put('/todo/addDocument/:id', TodoController.addDocumentRoute)
+  .delete('/todo/removeDocument/:id', TodoController.removeDocumentRoute)
 
   // Files methods
-  .get('/file/:id', FilesController.find)
-  .post('/file', multer(MultConfig).single('file'), FilesController.create)
-  .delete('/file/:id', FilesController.trueDelete)
+  .get('/file/:id', FilesController.getRoute)
+  .post('/file', multer(MultConfig).single('file'), FilesController.postRoute)
+  .delete('/file/:id', FilesController.deleteRoute)
 
   // Get all wrong routes
   .all('*', (req, res, next) => {

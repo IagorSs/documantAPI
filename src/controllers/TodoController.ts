@@ -23,7 +23,7 @@ async function getItem(id:string) {
   throw new BadGatewayError("Item not found");
 }
 
-async function find(req:Request, res:Response, next:NextFunction) {
+async function getRoute(req:Request, res:Response, next:NextFunction) {
   try {
     const data = await getItem(req.params.id);
 
@@ -33,7 +33,31 @@ async function find(req:Request, res:Response, next:NextFunction) {
   }
 }
 
-async function create(req:Request, res:Response, next:NextFunction) {
+async function getAllItemsRoutes(req:Request, res:Response, next:NextFunction) {
+  try {
+    const params:any = {
+      TableName,
+    };
+
+    const documentClient = await getClient();
+
+    const scanResults:any = [];
+    let items;
+
+    do {
+      // eslint-disable-next-line no-await-in-loop
+      items = await documentClient.scan(params).promise();
+      if (items.Items) items.Items.forEach((item) => scanResults.push(item));
+      params.ExclusiveStartKey = items.LastEvaluatedKey;
+    } while (typeof items.LastEvaluatedKey !== "undefined");
+
+    return res.status(successfulCodes.OK).json(scanResults);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function postRoute(req:Request, res:Response, next:NextFunction) {
   try {
     const {
       title,
@@ -73,36 +97,40 @@ async function create(req:Request, res:Response, next:NextFunction) {
   }
 }
 
-async function update(req:Request, res:Response, next:NextFunction) {
+async function update(id:string, key:string, value:any) {
+  const dataItem = await getItem(id);
+
+  if (!Object.keys(dataItem).includes(key)) throw new BadRequestError("Invalid Key");
+
+  const params = {
+    TableName,
+    Key: { id },
+    AttributeUpdates: {
+      state: {
+        Action: 'PUT',
+        Value: {
+          ...dataItem.state,
+          updated_on: new Date().toString(),
+        },
+      },
+      [key]: {
+        Action: 'PUT',
+        Value: value,
+      },
+    },
+  };
+
+  const docClient = await getClient();
+
+  await docClient.update(params).promise();
+}
+
+async function putRoute(req:Request, res:Response, next:NextFunction) {
   try {
     const { id } = req.params;
     const { key, value } = req.body;
 
-    const dataItem = await getItem(id);
-
-    if (!Object.keys(dataItem).includes(key)) throw new BadRequestError("Invalid Key");
-
-    const params = {
-      TableName,
-      Key: { id },
-      AttributeUpdates: {
-        state: {
-          Action: 'PUT',
-          Value: {
-            ...dataItem.state,
-            updated_on: new Date().toString(),
-          },
-        },
-        [key]: {
-          Action: 'PUT',
-          Value: value,
-        },
-      },
-    };
-
-    const docClient = await getClient();
-
-    await docClient.update(params).promise();
+    update(id, key, value);
 
     return res.sendStatus(successfulCodes.ACCEPTED);
   } catch (error) {
@@ -110,7 +138,37 @@ async function update(req:Request, res:Response, next:NextFunction) {
   }
 }
 
-async function trueDelete(req:Request, res:Response, next:NextFunction) {
+async function addDocumentRoute(req:Request, res:Response, next:NextFunction) {
+  try {
+    const { id } = req.params;
+    const { documentID } = req.query;
+
+    const dataItem = await getItem(id);
+
+    update(id, "documents", [...dataItem.documents, documentID]);
+
+    return res.sendStatus(successfulCodes.ACCEPTED);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function removeDocumentRoute(req:Request, res:Response, next:NextFunction) {
+  try {
+    const { id } = req.params;
+    const { documentID } = req.query;
+
+    const dataItem = await getItem(id);
+
+    update(id, "documents", await dataItem.documents.filter((value:string) => value !== documentID));
+
+    return res.sendStatus(successfulCodes.ACCEPTED);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteRoute(req:Request, res:Response, next:NextFunction) {
   try {
     const {
       id,
@@ -131,107 +189,12 @@ async function trueDelete(req:Request, res:Response, next:NextFunction) {
   }
 }
 
-async function addDocument(req:Request, res:Response, next:NextFunction) {
-  try {
-    const { id } = req.params;
-    const { documentID } = req.query;
-
-    const dataItem = await getItem(id);
-
-    const params = {
-      TableName,
-      Key: { id },
-      AttributeUpdates: {
-        state: {
-          Action: 'PUT',
-          Value: {
-            ...dataItem.state,
-            updated_on: new Date().toString(),
-          },
-        },
-        documents: {
-          Action: 'PUT',
-          Value: [...dataItem.documents, documentID],
-        },
-      },
-    };
-
-    const docClient = await getClient();
-
-    await docClient.update(params).promise();
-
-    return res.sendStatus(successfulCodes.ACCEPTED);
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function removeDocument(req:Request, res:Response, next:NextFunction) {
-  try {
-    const { id } = req.params;
-    const { documentID } = req.query;
-
-    const dataItem = await getItem(id);
-
-    const params = {
-      TableName,
-      Key: { id },
-      AttributeUpdates: {
-        state: {
-          Action: 'PUT',
-          Value: {
-            ...dataItem.state,
-            updated_on: new Date().toString(),
-          },
-        },
-        documents: {
-          Action: 'PUT',
-          Value: dataItem.documents.filter((value:string) => value !== documentID),
-        },
-      },
-    };
-
-    const docClient = await getClient();
-
-    await docClient.update(params).promise();
-
-    return res.sendStatus(successfulCodes.ACCEPTED);
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function allItems(req:Request, res:Response, next:NextFunction) {
-  try {
-    const params:any = {
-      TableName,
-    };
-
-    const documentClient = await getClient();
-
-    const scanResults:any = [];
-    let items;
-
-    do {
-      // eslint-disable-next-line no-await-in-loop
-      items = await documentClient.scan(params).promise();
-      if (items.Items) items.Items.forEach((item) => scanResults.push(item));
-      params.ExclusiveStartKey = items.LastEvaluatedKey;
-    } while (typeof items.LastEvaluatedKey !== "undefined");
-
-    return res.status(successfulCodes.OK).json(scanResults);
-  } catch (error) {
-    next(error);
-  }
-}
-
 export default {
-  getItem,
-  find,
-  create,
-  update,
-  trueDelete,
-  addDocument,
-  removeDocument,
-  allItems,
+  getRoute,
+  getAllItemsRoutes,
+  postRoute,
+  putRoute,
+  addDocumentRoute,
+  removeDocumentRoute,
+  deleteRoute,
 };

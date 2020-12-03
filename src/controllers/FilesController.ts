@@ -10,18 +10,7 @@ async function getClient() {
   return new AWS_S3({ signatureVersion: 'v4' });
 }
 
-async function createFileOnSave(File:Express.Multer.File) {
-  const S3return = {
-    originalName: File.originalname,
-    S3key: File.key,
-    type: File.mimetype,
-    size: File.size,
-  };
-
-  return S3return;
-}
-
-async function create(req:Request, res:Response) {
+async function postRoute(req:Request, res:Response) {
   const File:any = req.file;
 
   const S3return = {
@@ -34,7 +23,7 @@ async function create(req:Request, res:Response) {
   return res.status(successfulCodes.CREATED).json(S3return);
 }
 
-async function find(req:Request, res:Response, next:NextFunction) {
+async function getRoute(req:Request, res:Response, next:NextFunction) {
   try {
     const s3 = await getClient();
 
@@ -60,18 +49,22 @@ async function find(req:Request, res:Response, next:NextFunction) {
   }
 }
 
-async function trueDelete(req:Request, res:Response, next:NextFunction) {
-  try {
-    const s3 = await getClient();
+export async function deleteFile(id:string) {
+  const s3 = await getClient();
 
+  await s3.deleteObject({
+    Bucket: BucketName,
+    Key: id,
+  }).promise();
+}
+
+async function deleteRoute(req:Request, res:Response, next:NextFunction) {
+  try {
     const {
       id,
     } = req.params;
 
-    await s3.deleteObject({
-      Bucket: BucketName,
-      Key: id,
-    }).promise();
+    deleteFile(id);
 
     return res.sendStatus(successfulCodes.ACCEPTED);
   } catch (error) {
@@ -80,7 +73,7 @@ async function trueDelete(req:Request, res:Response, next:NextFunction) {
 }
 
 export default {
-  create,
-  find,
-  trueDelete,
+  postRoute,
+  getRoute,
+  deleteRoute,
 };
